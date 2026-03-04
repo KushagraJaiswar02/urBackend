@@ -35,8 +35,10 @@ exports.createRelease = async (req, res) => {
             publishedBy: req.user.email
         });
         await newRelease.save();
-        const developers = await Developer.find({ isVerified: true });
-        const emails = developers.map(dev => dev.email);
+        const developers = await Developer.find({ isVerified: true })
+            .select("email")
+            .lean();
+        const emails = developers.map(({ email }) => email);
         await Promise.all(emails.map(email => 
             emailQueue.add('release-email', {
                 email,

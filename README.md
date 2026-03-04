@@ -1,13 +1,6 @@
 <p align="center">
   <img src="banner.png" alt="urBackend Banner" width="100%" />
 </p>
-
-<p align="center">
-  <img src="logo.png" alt="urBackend Logo" width="80" />
-</p>
-
-<h1 align="center">urBackend</h1>
-
 <p align="center">
   <b>The Instant "Backend-as-a-Service" for Frontend Developers.</b><br/>
   Get a managed NoSQL database, JWT Auth, and Cloud Storage in 60 seconds.

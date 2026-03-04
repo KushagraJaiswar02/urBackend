@@ -293,6 +293,8 @@ graph LR
     end
 
     FE -->|"HTTPS REST"| BE
+    ExternalApp["External App"]
+    FE -->|"HTTPS REST"| BE
     ExternalApp -->|"x-api-key"| BE
     BE --> MONGO
     BE --> RDS

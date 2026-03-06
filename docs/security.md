@@ -1,6 +1,8 @@
 # Security & Keys 🛡️
 
-urBackend is built with a "Security-First" philosophy. We provide multiple layers of protection to keep your data safe.
+**your backend — your database — your rules.**
+
+urBackend is built with a "Security-First" philosophy, specifically designed for developers who want full control over their data without sacrificing safety.
 
 ## Dual-Key System
 

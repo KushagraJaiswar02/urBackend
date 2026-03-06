@@ -1,8 +1,8 @@
 # Getting Started 🛠️
 
-Follow these steps to integrate urBackend into your application in less than a minute.
+**Go from an empty project to a production-ready backend in under 60 seconds.** 
 
-## 1. Create a Project
+urBackend is built for speed and developer freedom. Whether you're using our managed infrastructure or **Bringing Your Own MongoDB**, the setup experience is designed to be seamless.
 
 Head over to the [urBackend Dashboard](https://urbackend.bitbros.in) and create a new project. You'll instantly receive two keys:
 

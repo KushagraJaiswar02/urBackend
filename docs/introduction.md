@@ -1,10 +1,14 @@
 # Introduction 🚀
 
-**urBackend** is a high-performance, open-source **Backend-as-a-Service (BaaS)** designed to eliminate the friction of building and managing server-side infrastructure.
+**Bring your own MongoDB. Get a production-ready backend in 60 seconds.**
 
-Built for frontend developers, it allows you to go from zero to a fully functional backend—complete with a NoSQL database, JWT-based authentication, and cloud storage—in under 60 seconds.
+> **your backend — your database — your rules.**
 
-## Key Features
+urBackend is a high-performance, open-source **Backend-as-a-Service (BaaS)** designed to eliminate the friction of building and managing server-side infrastructure without the trap of vendor lock-in.
+
+## Why urBackend?
+
+Traditional BaaS platforms lock you into their database and proprietary APIs. urBackend is different. It's built on the principle of **BYOD (Bring Your Own Database)**. You keep your data in your own hosted MongoDB instance, while we provide the professional-grade API layer, Auth, and Storage to make it production-ready instantly.
 
 - 🟢 **Instant NoSQL Database**: Create collections visually and interact with them via a standard REST API.
 - 🔐 **Managed Authentication**: Built-in logic for Sign Up, Login, and Profile management with secure JWT tokens.

@@ -1,9 +1,10 @@
+# urBackend 🚀
 <p align="center">
   <img src="banner.png" alt="urBackend Banner" width="100%" />
 </p>
 <p align="center">
-  <b>The Instant "Backend-as-a-Service" for Frontend Developers.</b><br/>
-  Get a managed NoSQL database, JWT Auth, and Cloud Storage in 60 seconds.
+  <b>Bring your own MongoDB. Get a production-ready backend in 60 seconds.</b><br/>
+  <i>your backend — your database — your rules.</i>
 </p>
 
 <p align="center">

@@ -516,7 +516,7 @@ console.log("File URL:", result.url);
                 </div>
 
                 {/* --- LEFT SIDEBAR (Navigation) --- */}
-                <div className={\`docs-sidebar \${isMenuOpen ? 'open' : ''}\`}>
+                <div className={`docs-sidebar ${isMenuOpen ? 'open' : ''}`}>
                     <h3 className="docs-nav-title">
                         Getting Started
                     </h3>
@@ -531,7 +531,7 @@ console.log("File URL:", result.url);
                                         setActiveTab(item.id);
                                         setIsMenuOpen(false);
                                     }}
-                                    className={\`btn \${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}\`}
+                                    className={`btn ${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}`}
                                     style={{
                                         width: '100%',
                                         justifyContent: 'flex-start',
@@ -562,7 +562,7 @@ console.log("File URL:", result.url);
                                         setActiveTab(item.id);
                                         setIsMenuOpen(false);
                                     }}
-                                    className={\`btn \${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}\`}
+                                    className={`btn ${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}`}
                                     style={{
                                         width: '100%',
                                         justifyContent: 'flex-start',
@@ -591,7 +591,7 @@ console.log("File URL:", result.url);
                                         setActiveTab(item.id);
                                         setIsMenuOpen(false);
                                     }}
-                                    className={\`btn \${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}\`}
+                                    className={`btn ${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}`}
                                     style={{
                                         width: '100%',
                                         justifyContent: 'flex-start',
@@ -613,7 +613,7 @@ console.log("File URL:", result.url);
                 </div>
 
                 {/* --- RESPONSIVE STYLES --- */}
-                <style>{\`
+                <style>{`
                 .docs-container {
                     display: flex;
                     gap: 3rem;
@@ -674,7 +674,7 @@ console.log("File URL:", result.url);
                         font-size: 1.5rem;
                     }
                 }
-            \`}</style>
+            `}</style>
 
             </div>
             <Footer />

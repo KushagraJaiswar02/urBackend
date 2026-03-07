@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { Copy, Terminal, Database, Shield, HardDrive, Check, Server, Menu, X, ChevronDown, AlertCircle, Zap, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Copy, Terminal, Database, Shield, HardDrive, Check, Server, Menu, ChevronDown, AlertCircle, Zap, AlertTriangle, Key, FileJson, BookOpen, Lock } from 'lucide-react';
 import { API_URL } from '../config';
 import TryItPanel from "../components/TryItPanel.jsx";
-
 import Footer from '../components/Layout/Footer';
 
 export default function Docs() {
     const [activeTab, setActiveTab] = useState('intro');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
 
     // Helper Component for Code Blocks
     const CodeBlock = ({ method, url, body, comment }) => {
@@ -20,9 +23,9 @@ const response = await fetch('${fullUrl}', {
     method: '${method}',
     headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'YOUR_PUBLIC_API_KEY'${method !== 'GET' ? ',\n        // "Authorization": "Bearer USER_TOKEN" (If accessing protected user data)' : ''}
+        'x-api-key': 'YOUR_API_KEY'${method !== 'GET' && method !== 'POST' && url === '/api/userAuth/me' ? ',\n        "Authorization": "Bearer USER_TOKEN" ' : ''}
     }${body ? `,
-    body: JSON.stringify(${JSON.stringify(body, null, 4).replace(/"/g, "'")})` : ''}
+    body: JSON.stringify(${JSON.stringify(body, null, 4).replace(/"([^"]+)":/g, '$1:').replace(/"/g, "'")})` : ''}
 });
 
 const data = await response.json();
@@ -89,21 +92,21 @@ console.log(data);
         </div>
     );
 
-    // Helper for Error Status Codes Table
-    const ErrorTable = ({ errors }) => (
+    // Helper for Reference Tables
+    const RefTable = ({ headers, rows }) => (
         <div style={{ margin: '1rem 0', overflowX: 'auto' }}>
             <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ borderBottom: '1px solid #333', textAlign: 'left' }}>
-                        <th style={{ padding: '8px', color: '#888' }}>Status Code</th>
-                        <th style={{ padding: '8px', color: '#888' }}>Description</th>
+                        {headers.map((h, i) => <th key={i} style={{ padding: '8px', color: '#888' }}>{h}</th>)}
                     </tr>
                 </thead>
                 <tbody>
-                    {errors.map((e, i) => (
+                    {rows.map((row, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid #222' }}>
-                            <td style={{ padding: '8px', fontFamily: 'monospace', color: 'var(--color-primary)' }}>{e.code}</td>
-                            <td style={{ padding: '8px', color: '#ddd' }}>{e.desc}</td>
+                            {row.map((cell, j) => (
+                                <td key={j} style={{ padding: '8px', color: j === 0 ? 'var(--color-primary)' : '#ddd', fontFamily: j === 0 || j === 2 ? 'monospace' : 'inherit' }}>{cell}</td>
+                            ))}
                         </tr>
                     ))}
                 </tbody>
@@ -117,107 +120,144 @@ console.log(data);
                 return (
                     <div className="fade-in">
                         <h2 className="page-title" style={{ marginBottom: '1rem' }}>Introduction</h2>
-
-                        <div className="card" style={{
-                            borderLeft: '4px solid var(--color-danger)',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            marginBottom: '2rem',
-                            padding: '1rem'
-                        }}>
-                            <h3 style={{ color: 'var(--color-danger)', fontSize: '1.1rem', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Shield size={18} /> Security Warning
-                            </h3>
-                            <p style={{ fontSize: '0.9rem', marginBottom: 0, color: 'var(--color-text-main)' }}>
-                                Your <strong>x-api-key</strong> grants <strong>Admin Access</strong> (Read/Write/Delete).
-                                <br />
-                                ❌ <strong>NEVER</strong> use this key in client-side code (frontend).
-                                <br />
-                                ✅ <strong>ONLY</strong> use this key in secure server-side environments.
-                            </p>
-                        </div>
-
+                        <p style={{ fontSize: '1.1rem', color: '#ddd', marginBottom: '2rem' }}>
+                            Bring your own MongoDB. Get a production-ready backend in 60 seconds.
+                        </p>
+                        
                         <div className="card" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Server size={18} /> Base URL
+                            <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#409EFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Server size={20} /> Base API URL
                             </h3>
-                            <code className="input-field" style={{ fontFamily: 'monospace', color: 'var(--color-primary)', display: 'block', width: '100%', overflowX: 'auto' }}>
+                            <code className="input-field" style={{ fontFamily: 'monospace', color: 'var(--color-primary)', display: 'block', width: '100%', overflowX: 'auto', backgroundColor: '#111', border: '1px solid #333' }}>
                                 {API_URL}
                             </code>
                         </div>
 
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Common Headers</h3>
-                        <ParamTable params={[
-                            { name: 'x-api-key', type: 'String', required: true, desc: 'Your Project API Key (Found in Dashboard)' },
-                            { name: 'Content-Type', type: 'String', required: true, desc: 'application/json (except for file uploads)' },
-                            { name: 'Authorization', type: 'String', required: false, desc: 'Bearer <USER_TOKEN> (For protected user routes)' },
-                        ]} />
-                    </div>
-                );
-
-            case 'errors':
-                return (
-                    <div className="fade-in">
-                        <h2 className="page-title" style={{ marginBottom: '1rem' }}>Error Reference</h2>
-                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                            Common HTTP status codes and their meanings when making API requests.
-                        </p>
-
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <AlertTriangle size={18} /> Status Codes
+                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Key size={20} color="#f59e0b" /> API Keys & Security
                         </h3>
-                        <ErrorTable errors={[
-                            { code: '400 Bad Request', desc: 'Invalid JSON or missing required schema fields.' },
-                            { code: '401 Unauthorized', desc: 'Invalid or missing API Key/JWT Token.' },
-                            { code: '403 Forbidden', desc: 'Resource limits exceeded (e.g., database or storage quota).' },
-                            { code: '404 Not Found', desc: 'Collection or document does not exist.' },
-                            { code: '500 Internal Server Error', desc: 'Unexpected server-side issues.' },
-                        ]} />
-                    </div>
-                );
-
-            case 'limits':
-                return (
-                    <div className="fade-in">
-                        <h2 className="page-title">Limits & Quotas</h2>
-                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                            Constraints applied to your project to ensure fair usage and performance.
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                            urBackend uses a Dual-Key system to protect your data. You can find these in your Dashboard.
                         </p>
-
+                        
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                            <div className="card">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: 'var(--color-primary)' }}>
-                                    <Zap size={20} />
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Rate Limits</h3>
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '5px' }}>100</div>
-                                <div style={{ fontSize: '0.9rem', color: '#888' }}>Requests per 15 minutes per IP</div>
+                            <div className="card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                                <h4 style={{ color: '#3b82f6', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <BookOpen size={16} /> Publishable Key
+                                </h4>
+                                <code style={{ color: '#fff', fontSize: '0.85rem' }}>pk_live_...</code>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '10px' }}>
+                                    Safe to use in frontend environments (React, mobile apps). Grants <strong>Read-Only</strong> access to your Database and Storage.
+                                </p>
                             </div>
-
-                            <div className="card">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: '#3b82f6' }}>
-                                    <Database size={20} />
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Database Size</h3>
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '5px' }}>50 MB</div>
-                                <div style={{ fontSize: '0.9rem', color: '#888' }}>Max total data size per project</div>
-                            </div>
-
-                            <div className="card">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: '#f59e0b' }}>
-                                    <HardDrive size={20} />
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>File Storage</h3>
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '5px' }}>100 MB</div>
-                                <div style={{ fontSize: '0.9rem', color: '#888' }}>Max total file storage per project</div>
+                            <div className="card" style={{ borderLeft: '4px solid #ef4444', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
+                                <h4 style={{ color: '#ef4444', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Shield size={16} /> Secret Key
+                                </h4>
+                                <code style={{ color: '#fff', fontSize: '0.85rem' }}>sk_live_...</code>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '10px' }}>
+                                    <strong>Full Read/Write Access.</strong> Use this ONLY in server-side code (Node.js, Next.js API Routes). NEVER expose this to clients.
+                                </p>
                             </div>
                         </div>
 
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Specific Limits</h3>
-                        <ul style={{ listStyle: 'disc', paddingLeft: '20px', color: '#ddd', lineHeight: '1.8' }}>
-                            <li><strong>File Upload Size:</strong> Maximum 10 MB per single file.</li>
-                            <li><strong>Log Retention:</strong> API Logs are capped at 50MB or 50,000 entries (older logs are auto-deleted).</li>
-                            <li><strong>Response Timeout:</strong> Requests taking longer than 10 seconds may be terminated.</li>
-                        </ul>
+                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Common Headers</h3>
+                        <ParamTable params={[
+                            { name: 'x-api-key', type: 'String', required: true, desc: 'Your Project API Key (Publishable or Secret depending on endpoint)' },
+                            { name: 'Content-Type', type: 'String', required: true, desc: 'application/json (except for file uploads)' },
+                            { name: 'Authorization', type: 'String', required: false, desc: 'Bearer <USER_TOKEN> (Required for protected user routes)' },
+                        ]} />
+                    </div>
+                );
+
+            case 'quick-ref':
+                return (
+                    <div className="fade-in">
+                        <h2 className="page-title" style={{ marginBottom: '1rem' }}>API Quick Reference</h2>
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
+                            A high-level overview of all available endpoints in urBackend.
+                        </p>
+
+                        <RefTable 
+                            headers={['Method', 'Endpoint', 'Description']}
+                            rows={[
+                                ['POST', '/api/userAuth/signup', 'Register a new user'],
+                                ['POST', '/api/userAuth/login', 'Log in and get JWT token'],
+                                ['GET', '/api/userAuth/me', 'Get current authenticated user profile'],
+                                ['GET', '/api/data/:collectionName', 'Get all documents in a collection'],
+                                ['GET', '/api/data/:collectionName/:id', 'Get a single document by ID'],
+                                ['POST', '/api/data/:collectionName', 'Insert a new document'],
+                                ['PUT', '/api/data/:collectionName/:id', 'Update document by ID ($set logic)'],
+                                ['DELETE', '/api/data/:collectionName/:id', 'Delete a document by ID'],
+                                ['POST', '/api/storage/upload', 'Upload a file via multipart form'],
+                                ['DELETE', '/api/storage/file', 'Delete a file using its storage path']
+                            ]}
+                        />
+                    </div>
+                );
+
+            case 'schemas':
+                return (
+                    <div className="fade-in">
+                        <h2 className="page-title">Schema Creation & Types</h2>
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
+                            urBackend is powered by a dynamic schema engine. Define data visually, and the API enforces validation automatically.
+                        </p>
+
+                        <div className="card" style={{
+                            borderLeft: '4px solid var(--color-warning)',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            marginBottom: '2rem',
+                            padding: '1rem'
+                        }}>
+                            <h3 style={{ color: 'var(--color-warning)', fontSize: '1.1rem', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Shield size={18} /> Crucial Auth Schema Requirement
+                            </h3>
+                            <p style={{ fontSize: '0.9rem', marginBottom: 0, color: 'var(--color-text-main)' }}>
+                                Always define your <strong>"users"</strong> collection schema manually <strong>before</strong> enabling Authentication. This ensures any custom user fields (like 'avatar' or 'role') are properly validated during signup.
+                            </p>
+                        </div>
+
+                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Supported Data Types</h3>
+                        <RefTable 
+                            headers={['Type', 'Description', 'Example JSON']}
+                            rows={[
+                                ['String', 'Alphanumeric text data', '"title": "Hello World"'],
+                                ['Number', 'Integers or decimals', '"price": 19.99'],
+                                ['Boolean', 'true or false values', '"isActive": true'],
+                                ['Date', 'Any valid date or ISO string', '"createdAt": "2024-03-07"'],
+                                ['Object', 'Nested JSON structure', '"meta": { "views": 10 }'],
+                                ['Array', 'A list of values', '"tags": ["tech", "ai"]'],
+                                ['Ref', 'Reference to another document ID', '"author": "642f9..."']
+                            ]}
+                        />
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '0.5rem' }}>1. Required Fields</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa' }}>
+                                    When a field is toggled as <strong>Required</strong> in the dashboard, any <code>POST</code> or <code>PUT</code> request missing that field is instantly rejected with a <code>400 Bad Request</code>.
+                                </p>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '0.5rem' }}>2. References (Ref)</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa' }}>
+                                    Link documents between collections (like a Foreign Key). Set type to <code>Ref</code> and specify the target collection. Store the <code>_id</code> in your requests.
+                                </p>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '0.5rem' }}>3. Nested Objects</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa' }}>
+                                    Create deep JSON hierarchies. Add a field, set type to <code>Object</code>, and define "Sub-fields" inside the dashboard.
+                                </p>
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '0.5rem' }}>4. Arrays</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa' }}>
+                                    Store lists. Set type to <code>Array</code>, and send a standard JSON array <code>[]</code> in your HTTP body.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 );
 
@@ -226,37 +266,49 @@ console.log(data);
                     <div className="fade-in">
                         <h2 className="page-title">Authentication</h2>
                         <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                            Built-in user management. Users are stored in the <code>users</code> collection.
+                            urBackend includes a built-in JWT authentication system for user registration, login, and profile retrieval.
                         </p>
 
+                        <div className="card" style={{
+                            borderLeft: '4px solid var(--color-danger)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            marginBottom: '2rem',
+                            padding: '1rem'
+                        }}>
+                            <h3 style={{ color: 'var(--color-danger)', fontSize: '1.1rem', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Shield size={18} /> The 'users' Collection Contract
+                            </h3>
+                            <p style={{ fontSize: '0.9rem', marginBottom: 0, color: '#e5e5e5' }}>
+                                To enable Auth, your project must have a collection named <code>users</code>. It <strong>MUST</strong> contain at least:
+                                <ul style={{ marginTop: '8px', marginBottom: '8px', paddingLeft: '20px' }}>
+                                    <li><code>email</code> (String, Required, Unique)</li>
+                                    <li><code>password</code> (String, Required)</li>
+                                </ul>
+                                You can add custom fields (e.g., <code>username</code>, <code>avatar</code>), and validation will handle them automatically.
+                            </p>
+                        </div>
+
                         <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>1. Sign Up User</h3>
-                        <ParamTable params={[
-                            { name: 'email', type: 'String', required: true, desc: 'User email address' },
-                            { name: 'password', type: 'String', required: true, desc: 'Raw password (min 6 chars recommended)' },
-                            { name: '...', type: 'Any', required: false, desc: 'Any other fields (name, age) will be saved' },
-                        ]} />
+                        <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '1rem' }}>Creates a new user, hashes password via BCrypt, and returns a 7-day JWT token.</p>
                         <CodeBlock
                             method="POST"
                             url="/api/userAuth/signup"
-                            body={{ email: "user@example.com", password: "securePassword123", username: "John Doe" }}
+                            body={{ email: "dev@example.com", password: "securePassword123", username: "dev_pulse", preferences: { theme: 'dark' } }}
                             comment="Register a new user"
                         />
 
                         <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>2. Login User</h3>
-                        <ParamTable params={[
-                            { name: 'email', type: 'String', required: true, desc: 'Registered email' },
-                            { name: 'password', type: 'String', required: true, desc: 'User password' },
-                        ]} />
+                        <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '1rem' }}>Authenticates credentials and returns a JWT token.</p>
                         <CodeBlock
                             method="POST"
                             url="/api/userAuth/login"
-                            body={{ email: "user@example.com", password: "securePassword123" }}
+                            body={{ email: "dev@example.com", password: "securePassword123" }}
                             comment="Login and receive a JWT Token"
                         />
 
                         <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>3. Get Profile (Me)</h3>
                         <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                            Requires <code>Authorization: Bearer &lt;TOKEN&gt;</code> header.
+                            Fetches the currently authenticated user details. Requires <code>Authorization: Bearer &lt;TOKEN&gt;</code> header.
                         </p>
                         <CodeBlock
                             method="GET"
@@ -269,55 +321,57 @@ console.log(data);
             case 'data':
                 return (
                     <div className="fade-in">
-                        <h2 className="page-title">Database</h2>
+                        <h2 className="page-title">Database Operations</h2>
                         <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                            Perform CRUD operations on your collections.
+                            urBackend provides a simplified RESTful interface for MongoDB. Interact with collections via simple JSON.
                         </p>
 
-                        <div className="card" style={{ marginBottom: '1rem', backgroundColor: '#1a1a1a' }}>
+                        <div className="card" style={{ marginBottom: '2rem', backgroundColor: '#1a1a1a' }}>
                             <p style={{ fontSize: '0.9rem', color: '#aaa' }}>
-                                <strong>Path Parameter:</strong> <code>:collectionName</code> is the name of your table (e.g., 'products', 'orders').
+                                <strong>Path Structure:</strong> All database endpoints follow the pattern <code>/api/data/:collectionName</code>.
+                                Replace <code>:collectionName</code> with your target table (e.g., 'posts', 'inventory').
                             </p>
                         </div>
 
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>1. Get All Items</h3>
-                        <CodeBlock
-                            method="GET"
-                            url="/api/data/:collectionName"
-                            comment="Fetch all documents"
-                        />
-
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>2. Insert Data</h3>
-                        <ParamTable params={[
-                            { name: 'schema_fields', type: 'Any', required: true, desc: 'Fields matching your collection schema' },
-                        ]} />
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>1. Create a Document</h3>
+                        <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '1rem' }}>Enforces your schema rules. Requires your Secret Key.</p>
                         <CodeBlock
                             method="POST"
-                            url="/api/data/:collectionName"
-                            body={{ name: "MacBook Pro", price: 1299, inStock: true }}
-                            comment="Add a new item"
+                            url="/api/data/posts"
+                            body={{ title: "Why BaaS is the future", tags: ["tech", "development"], meta: { views: 0 } }}
+                            comment="Add a new document"
                         />
                         <TryItPanel endpoint="/api/data/:collectionName" method="POST" />
 
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>2. Read Documents</h3>
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            <CodeBlock
+                                method="GET"
+                                url="/api/data/posts"
+                                comment="Fetch all documents in the collection"
+                            />
+                            <CodeBlock
+                                method="GET"
+                                url="/api/data/posts/642f9a1b..."
+                                comment="Fetch a single document by its _id"
+                            />
+                        </div>
 
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>3. Get / Update / Delete by ID</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                            Use the <code>_id</code> returned when creating an item.
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>3. Update a Document</h3>
+                        <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '1rem' }}>
+                            Uses MongoDB <code>$set</code> logic. You only need to send the fields you want to change. Nested updates are supported natively.
                         </p>
                         <CodeBlock
-                            method="GET"
-                            url="/api/data/:collectionName/:id"
-                            comment="Fetch a document by ID"
-                        />
-                        <CodeBlock
                             method="PUT"
-                            url="/api/data/:collectionName/:id"
-                            body={{ price: 1199, inStock: false }}
-                            comment="Update specific fields"
+                            url="/api/data/posts/642f9a1b..."
+                            body={{ "meta.views": 105, tags: ["tech", "web"] }}
+                            comment="Update document fields"
                         />
+
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>4. Delete a Document</h3>
                         <CodeBlock
                             method="DELETE"
-                            url="/api/data/:collectionName/:id"
+                            url="/api/data/posts/642f9a1b..."
                             comment="Permanently remove a document"
                         />
                     </div>
@@ -326,54 +380,118 @@ console.log(data);
             case 'storage':
                 return (
                     <div className="fade-in">
-                        <h2 className="page-title">Storage</h2>
+                        <h2 className="page-title">Cloud Storage</h2>
                         <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                            Upload, manage, and delete files in the cloud.
+                            Manage file and image uploads to global CDNs automatically.
                         </p>
 
                         <div className="card" style={{ borderLeft: '4px solid var(--color-warning)', marginBottom: '2rem' }}>
                             <p style={{ fontSize: '0.9rem' }}>
-                                <strong>Note:</strong> Do NOT send JSON. Send <code>multipart/form-data</code>.
+                                <strong>Note:</strong> Upload operations must use <code>multipart/form-data</code>. Do NOT send JSON, and let your browser/client set the Content-Type automatically.
                             </p>
                         </div>
 
-                        <h3 style={{ fontSize: '1.1rem' }}>1. Upload File</h3>
-                        <ParamTable params={[
-                            { name: 'file', type: 'File', required: true, desc: 'The file object to upload (Max 5MB)' },
-                        ]} />
+                        <h3 style={{ fontSize: '1.1rem' }}>1. Upload a File</h3>
+                        <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '1rem' }}>Uploads file and returns a public CDN URL.</p>
 
                         <div className="card" style={{ padding: '0', overflow: 'hidden', backgroundColor: '#111', border: '1px solid #333', marginTop: '1rem', marginBottom: '2rem' }}>
                             <div style={{ padding: '16px', overflowX: 'auto' }}>
-                                <pre style={{ margin: 0, fontFamily: 'monospace', fontSize: '0.85rem', color: '#e5e5e5', lineHeight: 1.6 }}>{`
+                                <pre style={{ margin: 0, fontFamily: 'monospace', fontSize: '0.85rem', color: '#e5e5e5', lineHeight: 1.6 }}>{`// Upload via FormData
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
 
 const response = await fetch('${API_URL}/api/storage/upload', {
     method: 'POST',
     headers: {
-        'x-api-key': 'YOUR_API_KEY_HERE'
-        // Content-Type header is set automatically by browser for FormData
+        'x-api-key': 'YOUR_SECRET_KEY'
     },
     body: formData
 });
 
 const result = await response.json();
-// Returns: { url: "...", path: "project_id/filename.jpg" }
+// Returns: { url: "https://...", path: "project_id/image.jpg", provider: "internal" }
 console.log("File URL:", result.url);
 `}</pre>
                             </div>
                         </div>
 
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>2. Delete File</h3>
-                        <ParamTable params={[
-                            { name: 'path', type: 'String', required: true, desc: 'The "path" received from upload response' },
-                        ]} />
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '2rem' }}>2. Delete a File</h3>
+                        <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '1rem' }}>Provide the exact <code>path</code> returned during the original upload.</p>
                         <CodeBlock
                             method="DELETE"
                             url="/api/storage/file"
-                            body={{ path: "PROJECT_ID/171569483_image.png" }}
-                            comment="Delete a specific file"
+                            body={{ path: "642f9a1b.../my_image.png" }}
+                            comment="Permanently delete a file from storage"
                         />
+                    </div>
+                );
+
+            case 'errors':
+                return (
+                    <div className="fade-in">
+                        <h2 className="page-title" style={{ marginBottom: '1rem' }}>Error Reference</h2>
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
+                            Standard HTTP status codes and what they mean in urBackend.
+                        </p>
+                        
+                        <RefTable 
+                            headers={['Status Code', 'Description']}
+                            rows={[
+                                ['200 OK', 'Request succeeded.'],
+                                ['201 Created', 'Document, User, or File created successfully.'],
+                                ['400 Bad Request', 'Validation failure or malformed JSON (Schema violation).'],
+                                ['401 Unauthorized', 'Missing/Invalid API Key or expired JWT.'],
+                                ['403 Forbidden', 'Resource limit exceeded (e.g. Storage Quota reached).'],
+                                ['404 Not Found', 'Collection, document, or file does not exist.'],
+                                ['413 Payload Too Large', 'File size exceeds limit (10MB max).'],
+                                ['422 Unprocessable', 'Logic error, e.g. Trying to enable Auth without a users collection.'],
+                                ['500 Server Error', 'Unexpected problem on our side.']
+                            ]}
+                        />
+                    </div>
+                );
+            
+            case 'limits':
+                return (
+                    <div className="fade-in">
+                        <h2 className="page-title">Limits & Quotas</h2>
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
+                            Constraints applied to ensure high availability for all developers.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <div className="card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: 'var(--color-primary)' }}>
+                                    <Zap size={20} />
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Rate Limits</h3>
+                                </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '5px' }}>100</div>
+                                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>Requests per 15 mins (Global)</div>
+                            </div>
+
+                            <div className="card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: '#c084fc' }}>
+                                    <Lock size={20} />
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Auth Rate Limits</h3>
+                                </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '5px' }}>~10/hr</div>
+                                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>Login/Signup attempts per IP</div>
+                            </div>
+
+                            <div className="card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: '#f59e0b' }}>
+                                    <HardDrive size={20} />
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Upload Limits</h3>
+                                </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '5px' }}>10 MB</div>
+                                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>Maximum size per uploaded file</div>
+                            </div>
+                        </div>
+
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Storage & Database Quotas</h3>
+                        <p style={{ color: '#aaa', lineHeight: '1.6', marginBottom: '1rem' }}>
+                            Total allowed usage is determined by your current plan. By default on the Free tier, projects have caps on total Database Documents and File Storage. Exceeding these returns a <code>403 Forbidden</code> response on POST/PUT requests.
+                        </p>
                     </div>
                 );
 
@@ -391,25 +509,21 @@ console.log("File URL:", result.url);
                     <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'space-between' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Menu size={16} />
-                            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('-', ' ')}
                         </span>
                         <ChevronDown size={16} style={{ transform: isMenuOpen ? 'rotate(180deg)' : 'rotate(0)', transition: '0.2s' }} />
                     </button>
                 </div>
 
                 {/* --- LEFT SIDEBAR (Navigation) --- */}
-                <div className={`docs-sidebar ${isMenuOpen ? 'open' : ''}`}>
+                <div className={\`docs-sidebar \${isMenuOpen ? 'open' : ''}\`}>
                     <h3 className="docs-nav-title">
-                        Documentation
+                        Getting Started
                     </h3>
-                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                    <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
                         {[
                             { id: 'intro', label: 'Introduction', icon: Terminal },
-                            { id: 'errors', label: 'Error Reference', icon: AlertTriangle },
-                            { id: 'limits', label: 'Limits & Quotas', icon: AlertCircle },
-                            { id: 'auth', label: 'Authentication', icon: Shield },
-                            { id: 'data', label: 'Database & API', icon: Database },
-                            { id: 'storage', label: 'Storage', icon: HardDrive },
+                            { id: 'quick-ref', label: 'API Quick Reference', icon: BookOpen },
                         ].map(item => (
                             <li key={item.id} style={{ marginBottom: '4px' }}>
                                 <button
@@ -417,7 +531,67 @@ console.log("File URL:", result.url);
                                         setActiveTab(item.id);
                                         setIsMenuOpen(false);
                                     }}
-                                    className={`btn ${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}`}
+                                    className={\`btn \${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}\`}
+                                    style={{
+                                        width: '100%',
+                                        justifyContent: 'flex-start',
+                                        backgroundColor: activeTab === item.id ? 'rgba(62, 207, 142, 0.1)' : 'transparent',
+                                        color: activeTab === item.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                        fontWeight: activeTab === item.id ? 600 : 400
+                                    }}
+                                >
+                                    <item.icon size={16} /> {item.label}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <h3 className="docs-nav-title">
+                        Core Concepts
+                    </h3>
+                    <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
+                        {[
+                            { id: 'schemas', label: 'Schemas & Types', icon: FileJson },
+                            { id: 'data', label: 'Database Operations', icon: Database },
+                            { id: 'auth', label: 'Authentication', icon: Shield },
+                            { id: 'storage', label: 'Cloud Storage', icon: HardDrive },
+                        ].map(item => (
+                            <li key={item.id} style={{ marginBottom: '4px' }}>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab(item.id);
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className={\`btn \${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}\`}
+                                    style={{
+                                        width: '100%',
+                                        justifyContent: 'flex-start',
+                                        backgroundColor: activeTab === item.id ? 'rgba(62, 207, 142, 0.1)' : 'transparent',
+                                        color: activeTab === item.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                        fontWeight: activeTab === item.id ? 600 : 400
+                                    }}
+                                >
+                                    <item.icon size={16} /> {item.label}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <h3 className="docs-nav-title">
+                        Reference
+                    </h3>
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {[
+                            { id: 'errors', label: 'Status Codes', icon: AlertTriangle },
+                            { id: 'limits', label: 'Limits & Quotas', icon: AlertCircle },
+                        ].map(item => (
+                            <li key={item.id} style={{ marginBottom: '4px' }}>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab(item.id);
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className={\`btn \${activeTab === item.id ? 'btn-primary' : 'btn-ghost'}\`}
                                     style={{
                                         width: '100%',
                                         justifyContent: 'flex-start',
@@ -439,12 +613,13 @@ console.log("File URL:", result.url);
                 </div>
 
                 {/* --- RESPONSIVE STYLES --- */}
-                <style>{`
+                <style>{\`
                 .docs-container {
                     display: flex;
                     gap: 3rem;
                     align-items: flex-start;
                     padding-top: 2rem;
+                    padding-bottom: 6rem;
                 }
                 .docs-sidebar {
                     width: 240px;
@@ -499,7 +674,7 @@ console.log("File URL:", result.url);
                         font-size: 1.5rem;
                     }
                 }
-            `}</style>
+            \`}</style>
 
             </div>
             <Footer />

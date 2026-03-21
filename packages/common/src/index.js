@@ -42,6 +42,7 @@ const {
     createCollectionSchema,
     createSchemaApiKeySchema,
     sanitize,
+    userSignupSchema,
     updateExternalConfigSchema 
 } = require('./utils/input.validation');
 const {garbageCollect, storageGarbageCollect} = require('./utils/GC');
@@ -58,6 +59,7 @@ const QueryEngine = require('./utils/queryEngine');
 const { registry, storageRegistry } = require('./utils/registry');
 const { getStorage } = require('./utils/storage.manager');
 const validateEnv = require('./utils/validateEnv');
+const {validateData, validateUpdateData} = require('./utils/validateData')
 
 
 module.exports = {
@@ -111,5 +113,8 @@ module.exports = {
   deleteProjectByApiKeyCache,
   setProjectById,
   getProjectById,
-  deleteProjectById
+  deleteProjectById,
+  validateData,
+  validateUpdateData,
+  userSignupSchema
 };

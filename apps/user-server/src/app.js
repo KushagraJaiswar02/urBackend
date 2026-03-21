@@ -2,7 +2,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
-const { validateEnv } = require('@urbackend/common');
+const {validateEnv} = require('@urbackend/common');
 
 if (process.env.NODE_ENV !== 'test') {
     validateEnv();
@@ -11,43 +11,19 @@ if (process.env.NODE_ENV !== 'test') {
 const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
-const rateLimit = require('express-rate-limit');
 const app = express();
 app.set('trust proxy', 1);
-const {garbageCollect, storageGarbageCollect, getPublicIp} = require('@urbackend/common');
+const { garbageCollect, storageGarbageCollect, getPublicIp } = require('@urbackend/common');
 const { capture } = require('@kiroo/sdk');
 
 
 // Initialize Queue Workers
-const { emailQueue, authEmailQueue } = require('@urbackend/common');
-
+const {emailQueue} = require('@urbackend/common');
+const {authEmailQueue} = require('@urbackend/common');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-const dashboardLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
-    message: { error: "Dashboard usage limit exceeded. Slow down!" },
-    skip: (req) => process.env.NODE_ENV === 'development',
-});
-
-const whitelist = (function() {
-    const whitelist = ['https://urbackend.bitbros.in'];
-    if (process.env.NODE_ENV === 'development') {
-        whitelist.push('http://localhost:5173');
-    }
-    return {
-        get: () => {
-            return whitelist.slice();
-        }
-    };
-})()
-
-
-app.use(cors({
-  origin: whitelist.get(),
-}));
+app.use(cors());
 
 
 if (process.env.NODE_ENV !== 'test') {
@@ -59,23 +35,36 @@ app.use(capture({
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseKey: process.env.SUPABASE_KEY,
   bucket: process.env.SUPABASE_BUCKET,
-  sampleRate: 0.1
+  sampleRate: 0.2
 }));
 
 
 
+// LOGGING
+const { limiter, logger } = require('./middlewares/api_usage');
+
 // Route Imports
-const authRoute = require('./routes/auth');
-const projectRoute = require('./routes/projects');
-const releaseRoute = require('./routes/releases');
+const dataRoute = require('./routes/data');
+const userAuthRoute = require('./routes/userAuth');
+const storageRoute = require('./routes/storage');
+const schemaRoute = require('./routes/schemas');
 
 // ROUTES SETUP 
-app.use('/api/auth', authRoute); 
-app.use('/api/projects', dashboardLimiter, projectRoute); // Project Mngmt
-app.use('/api/releases', releaseRoute);
+app.use('/api/userAuth', limiter, logger, userAuthRoute);
 
+const projectCorsPreflight = (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key");
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
+};
 
-
+app.use('/api/data', projectCorsPreflight, limiter, logger, dataRoute);
+app.use('/api/schemas', projectCorsPreflight, limiter, logger, schemaRoute);
+app.use('/api/storage', projectCorsPreflight, limiter, logger, storageRoute);
 
 app.get('/api/server-ip', async (req, res) => {
     const ip = await getPublicIp();
@@ -110,7 +99,7 @@ app.use((req, res) => {
 // INITIALIZATION
 if (process.env.NODE_ENV !== 'test') {
 
-    const PORT = process.env.PORT || 1234;
+    const PORT = process.env.USER_PORT || 1235;
 
     const { connectDB } = require('@urbackend/common');
 

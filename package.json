@@ -9,7 +9,13 @@
     "sdks/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "concurrently -c \"cyan,magenta,yellow\" -n \"ADMIN,USER,WEB\" \"npm run dev --workspace=admin-server\" \"npm run dev --workspace=user-server\" \"npm run dev --workspace=web-dashboard\"",
     "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "path": "^0.12.7"
   }
 }

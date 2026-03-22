@@ -20,8 +20,8 @@ const Log = require('./models/Log');
 const Otp = require('./models/otp');
 
 // Queues
-const authEmailQueue = require('./queues/authEmailQueue');
-const emailQueue = require('./queues/emailQueue');
+const { authEmailQueue } = require('./queues/authEmailQueue');
+const { emailQueue } = require('./queues/emailQueue');
 
 // Middleware
 const checkAuthEnabled = require('./middleware/checkAuthEnabled')

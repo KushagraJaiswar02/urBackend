@@ -1,4 +1,5 @@
 const { Resend } = require('resend');
+const { marked } = require('marked');
 
 const dotenv = require('dotenv');
 
@@ -72,7 +73,9 @@ const escapeHtml = (unsafe) => {
 async function sendReleaseEmail(email, { version, title, content }) {
     const sVersion = escapeHtml(version);
     const sTitle = escapeHtml(title);
-    const sContent = escapeHtml(content);
+    
+    // Convert markdown content to HTML using marked
+    const sContentHtml = marked.parse(content);
 
     try {
         const htmlContent = `
@@ -85,7 +88,11 @@ async function sendReleaseEmail(email, { version, title, content }) {
                     .logo { margin-bottom: 32px; font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: #111; }
                     .badge { display: inline-block; padding: 4px 10px; background: #6366f1; color: white; border-radius: 6px; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
                     h1 { font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 24px; letter-spacing: -0.02em; }
-                    .content { font-size: 16px; line-height: 1.6; color: #444; margin-bottom: 32px; white-space: pre-wrap; }
+                    .content { font-size: 16px; line-height: 1.6; color: #444; margin-bottom: 32px; }
+                    .content h1, .content h2, .content h3 { color: #111; margin-top: 24px; margin-bottom: 12px; }
+                    .content p { margin-top: 0; margin-bottom: 16px; }
+                    .content ul { padding-left: 20px; margin-bottom: 16px; }
+                    .content li { margin-bottom: 8px; }
                     .cta { display: inline-block; background-color: #111111; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px; transition: background 0.2s; }
                     .footer { margin-top: 64px; padding-top: 32px; border-top: 1px solid #eeeeee; font-size: 13px; color: #888888; }
                     .footer p { margin: 4px 0; }
@@ -96,7 +103,7 @@ async function sendReleaseEmail(email, { version, title, content }) {
                     <div class="logo">urBackend</div>
                     <div class="badge">New Release ${sVersion}</div>
                     <h1>${sTitle}</h1>
-                    <div class="content">${sContent}</div>
+                    <div class="content">${sContentHtml}</div>
                     <a href="https://urbackend.bitbros.in/releases" class="cta">Read the full changelog</a>
                     <div class="footer">
                         <p>You're receiving this because you're a registered developer on urBackend.</p>

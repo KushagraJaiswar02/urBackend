@@ -7,7 +7,7 @@ import {
     Database, Key, Copy, RefreshCw, AlertTriangle,
     Layers, ArrowRight, Activity, Server, ShieldCheck
 } from 'lucide-react';
-import { API_URL } from '../config';
+import { API_URL, PUBLIC_API_URL } from '../config';
 
 function ProjectDetails() {
     const { projectId } = useParams();
@@ -157,10 +157,10 @@ function ProjectDetails() {
                                 <div style={{ padding: '10px 14px', color: '#666', borderRight: '1px solid var(--color-border)', fontSize: '0.9rem', userSelect: 'none', background: 'rgba(255,255,255,0.02)' }}>POST</div>
                                 <input
                                     readOnly
-                                    value={`${API_URL}/api/data/{collection}`}
+                                    value={`${PUBLIC_API_URL}/api/data/{collection}`}
                                     style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--color-text-main)', padding: '10px', fontFamily: 'monospace', fontSize: '0.9rem', outline: 'none' }}
                                 />
-                                <button onClick={() => copyToClipboard(`${API_URL}/api/data`)} style={{ background: 'transparent', border: 'none', color: '#666', padding: '0 12px', cursor: 'pointer', transition: 'color 0.2s' }}>
+                                <button onClick={() => copyToClipboard(`${PUBLIC_API_URL}/api/data`)} style={{ background: 'transparent', border: 'none', color: '#666', padding: '0 12px', cursor: 'pointer', transition: 'color 0.2s' }}>
                                     <Copy size={16} />
                                 </button>
                             </div>

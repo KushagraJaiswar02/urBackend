@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Copy, Terminal, Database, Shield, HardDrive, Check, Server, Menu, ChevronDown, AlertCircle, Zap, AlertTriangle, Key, FileJson, BookOpen, Lock } from 'lucide-react';
-import { API_URL } from '../config';
+import { API_URL, PUBLIC_API_URL } from '../config';
 import TryItPanel from "../components/TryItPanel.jsx";
 import Footer from '../components/Layout/Footer';
 
@@ -15,7 +15,7 @@ export default function Docs() {
     // Helper Component for Code Blocks
     const CodeBlock = ({ method, url, body, comment }) => {
         const [copied, setCopied] = useState(false);
-        const fullUrl = `${API_URL}${url}`;
+        const fullUrl = `${PUBLIC_API_URL}${url}`;
 
         const codeString = `
 // ${comment || 'Example Request'}
@@ -129,7 +129,7 @@ console.log(data);
                                 <Server size={20} /> Base API URL
                             </h3>
                             <code className="input-field" style={{ fontFamily: 'monospace', color: 'var(--color-primary)', display: 'block', width: '100%', overflowX: 'auto', backgroundColor: '#111', border: '1px solid #333' }}>
-                                {API_URL}
+                                {PUBLIC_API_URL}
                             </code>
                         </div>
 
@@ -400,7 +400,7 @@ console.log(data);
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
 
-const response = await fetch('${API_URL}/api/storage/upload', {
+const response = await fetch('${PUBLIC_API_URL}/api/storage/upload', {
     method: 'POST',
     headers: {
         'x-api-key': 'YOUR_SECRET_KEY'

@@ -68,8 +68,7 @@ function validateData(incomingData, schemaRules) {
         const error = validateField(value, field);
         if (error) return { error };
 
-        // Ensure defined fields are present if required (handled by validateField)
-        // cleanData already has it, but we can be explicit
+
         if (value !== undefined) {
             cleanData[field.key] = value;
         }

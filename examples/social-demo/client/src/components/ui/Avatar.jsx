@@ -1,4 +1,4 @@
-import { cn } from '../../lib/utils';
+import { cn, sanitizeUrl } from '../../lib/utils';
 
 export default function Avatar({ src, alt, size = 'md', className, verified = false }) {
   const sizes = {
@@ -12,7 +12,7 @@ export default function Avatar({ src, alt, size = 'md', className, verified = fa
     <div className="relative inline-block">
       <div className={cn('rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800', sizes[size], className)}>
         {src ? (
-          <img src={src} alt={alt} className="w-full h-full object-cover" />
+          <img src={sanitizeUrl(src)} alt={alt} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold">
             {alt?.charAt(0)?.toUpperCase() || '?'}

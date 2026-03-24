@@ -1,6 +1,7 @@
 import { Heart, MessageCircle, Repeat2, Share, Trash2, MoreHorizontal } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { sanitizeUrl } from '../../lib/utils';
 import Avatar from '../ui/Avatar';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { dataApi } from '../../lib/api';
@@ -164,7 +165,7 @@ export default function PostCard({ post }) {
               {post.images.map((img, idx) => (
                 <img
                   key={idx}
-                  src={img}
+                  src={sanitizeUrl(img)}
                   alt=""
                   className="w-full object-cover max-h-96"
                   onClick={(e) => e.stopPropagation()}

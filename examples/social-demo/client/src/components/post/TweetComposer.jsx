@@ -3,6 +3,7 @@ import { Image, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dataApi, storageApi } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { sanitizeUrl } from '../../lib/utils';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
 
@@ -106,7 +107,7 @@ export default function TweetComposer({ onSuccess }) {
             }`}>
               {previewUrls.map((url, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={url} alt="" className="w-full h-48 object-cover" />
+                  <img src={sanitizeUrl(url)} alt="" className="w-full h-48 object-cover" />
                   <button
                     onClick={() => removeImage(idx)}
                     className="absolute top-2 right-2 p-1.5 bg-black/70 rounded-full hover:bg-black/90 transition-colors"

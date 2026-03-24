@@ -7,6 +7,7 @@ import Button from '../components/ui/Button';
 import PostCard from '../components/post/PostCard';
 import { Calendar, Link as LinkIcon, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { sanitizeUrl } from '../lib/utils';
 
 export default function Profile() {
   const { username } = useParams();
@@ -95,7 +96,7 @@ export default function Profile() {
       {/* Banner */}
       <div className="h-48 bg-gradient-to-r from-primary to-blue-600">
         {profile.banner && (
-          <img src={profile.banner} alt="" className="w-full h-full object-cover" />
+          <img src={sanitizeUrl(profile.banner)} alt="" className="w-full h-full object-cover" />
         )}
       </div>
 

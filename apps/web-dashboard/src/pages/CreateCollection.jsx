@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { API_URL } from '../config';
 
 const MAX_DEPTH = 3;
 
@@ -331,7 +330,7 @@ function CreateCollection() {
     const { projectId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { token, user } = useAuth();
+    const { user } = useAuth();
 
     const queryParams = new URLSearchParams(location.search);
     const initialName = queryParams.get('name')?.trim().toLowerCase() || '';
@@ -362,9 +361,7 @@ function CreateCollection() {
     useState(() => {
         const fetchCollections = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/projects/${projectId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.get(`/api/projects/${projectId}`);
                 setCollections(res.data.collections || []);
             } catch { /* ignore */ }
         };
@@ -412,12 +409,10 @@ function CreateCollection() {
 
         setLoading(true);
         try {
-            await axios.post(`${API_URL}/api/projects/collection`, {
+            await api.post(`/api/projects/collection`, {
                 projectId,
                 collectionName: normalizedName,
                 schema: cleanFieldsForApi(fields)
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             toast.success("Collection Created!");

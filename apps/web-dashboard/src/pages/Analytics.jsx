@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Activity, HardDrive, Server, Database, RefreshCw, Clock, Globe } from 'lucide-react';
 import { API_URL } from '../config';
 
 export default function Analytics() {
     const { projectId } = useParams();
-    const { token } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -16,9 +14,7 @@ export default function Analytics() {
     const fetchData = useCallback(async () => {
         try {
             setRefreshing(true);
-            const res = await axios.get(`${API_URL}/api/projects/${projectId}/analytics`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get(`/api/projects/${projectId}/analytics`);
             setData(res.data);
         } catch (err) {
             console.error(err);
@@ -26,7 +22,7 @@ export default function Analytics() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [projectId, token]);
+    }, [projectId]);
 
     useEffect(() => {
         fetchData();

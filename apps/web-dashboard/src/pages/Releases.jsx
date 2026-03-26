@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_URL, ADMIN_EMAIL } from '../config';
+import api from '../utils/api';
+import { ADMIN_EMAIL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { Rocket, Clock, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +18,7 @@ export default function Releases() {
     useEffect(() => {
         const fetchReleases = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/releases`);
+                const res = await api.get(`/api/releases`);
                 setReleases(res.data);
             } catch (err) {
                 console.error("Failed to fetch releases", err);

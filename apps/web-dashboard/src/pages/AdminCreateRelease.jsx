@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_URL, ADMIN_EMAIL } from '../config';
+import api from '../utils/api';
+import { ADMIN_EMAIL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Send, ArrowLeft, AlertCircle } from 'lucide-react';
 
 export default function AdminCreateRelease() {
-    const { user, token } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -35,9 +35,7 @@ export default function AdminCreateRelease() {
         const loadToast = toast.loading("Publishing release and queuing emails...");
 
         try {
-            const res = await axios.post(`${API_URL}/api/releases`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.post(`/api/releases`, formData);
             toast.dismiss(loadToast);
             toast.success(res.data.message);
             navigate('/releases');

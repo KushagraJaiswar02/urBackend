@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../config';
 import { Code, Terminal } from 'lucide-react';
 
 function Login() {
@@ -11,7 +10,16 @@ function Login() {
     const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+
+    // If already authenticated, redirect to dashboard
+    useEffect(() => {
+        if (!authLoading && isAuthenticated) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, authLoading, navigate]);
+
+    if (authLoading) return null;
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,29 +36,14 @@ function Login() {
         const loadingToast = toast.loading('Logging in...');
 
         try {
-            const response = await axios.post(`${API_URL}/api/auth/login`, formData);
-
-            const { token } = response.data;
-            console.log("Login Success! Token:", token);
-
-            const parseJwt = (token) => {
-                try {
-                    return JSON.parse(atob(token.split('.')[1]));
-                } catch {
-                    return null;
-                }
-            };
-
-            const decoded = parseJwt(token);
-            const isVerified = decoded?.isVerified;
-
-            login({ email: formData.email, isVerified }, token);
-
-            toast.dismiss(loadingToast);
-            toast.success("Welcome back!");
-
-            navigate('/dashboard');
-
+            const response = await api.post('/api/auth/login', formData);
+            
+            if (response.data.success) {
+                login(response.data.user);
+                toast.dismiss(loadingToast);
+                toast.success("Welcome back!");
+                navigate('/dashboard');
+            }
         } catch (err) {
             console.error(err);
             toast.dismiss(loadingToast);

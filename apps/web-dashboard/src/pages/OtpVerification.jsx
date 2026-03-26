@@ -1,48 +1,47 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../config';
 
 function OtpVerification() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, token, login } = useAuth(); // Destructure login
+    const { user, login, isLoading: authLoading } = useAuth(); // Destructure login
     const [otp, setOtp] = useState('');
     const [email] = useState(location.state?.email || user?.email || '');
     // Ref to track if we have already auto-sent OTP to prevent double sends in StrictMode
     const hasSentOtp = useRef(false);
 
     useEffect(() => {
-
-        if (!email && !token) {
+        if (authLoading) return;
+        
+        if (!email && !user) {
             navigate('/login');
             return;
         }
 
         if (email && !hasSentOtp.current && (!user || !user.isVerified)) {
             hasSentOtp.current = true;
-            const sendOtpPromise = axios.post(`${API_URL}/api/auth/send-otp`, { email });
+            const sendOtpPromise = api.post('/api/auth/send-otp', { email });
             toast.promise(sendOtpPromise, {
                 loading: 'Sending OTP...',
                 success: 'OTP sent to your email!',
                 error: 'Failed to send OTP'
             });
         }
-    }, [email, token, navigate, user]);
+    }, [email, navigate, user]);
 
     const handleVerify = async (e) => {
         e.preventDefault();
         const loadingToast = toast.loading('Verifying OTP...');
         try {
-            const res = await axios.post(`${API_URL}/api/auth/verify-otp`, { email, otp });
+            const res = await api.post('/api/auth/verify-otp', { email, otp });
             toast.dismiss(loadingToast);
             toast.success('Email verified successfully!');
 
-            if (res.data.token) {
-                const updatedUser = { ...user, isVerified: true };
-                login(updatedUser, res.data.token);
+            if (res.data.success) {
+                login(res.data.user);
             }
             navigate('/dashboard');
         } catch {
@@ -54,7 +53,7 @@ function OtpVerification() {
     const handleResend = async () => {
         const loadingToast = toast.loading('Resending OTP...');
         try {
-            await axios.post(`${API_URL}/api/auth/send-otp`, { email });
+            await api.post('/api/auth/send-otp', { email });
             toast.dismiss(loadingToast);
             toast.success('OTP sent successfully!');
         } catch {
@@ -121,6 +120,8 @@ function OtpVerification() {
         border: '1px solid #555',
         color: '#aaa'
     };
+
+    if (authLoading) return null;
 
     return (
         <div style={containerStyle}>

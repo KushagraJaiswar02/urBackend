@@ -1,21 +1,20 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function (req, res, next) {
-    // Retrieve the Authorization header from the request
-    const authHeader = req.header('Authorization');
+    // Check for token in cookies (Primary for Web)
+    let token = req.cookies && req.cookies.accessToken;
 
-    // Check if the Authorization header exists
-    if (!authHeader) {
-        return res.status(401).send('Access Denied: No Token Provided');
+    // Fallback to Authorization header (For CLI/API)
+    if (!token) {
+        const authHeader = req.header('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
     }
 
-    // Extract the actual token by removing the "Bearer " prefix
-    // spliting the header value by space and take the second part
-    const token = authHeader.split(' ')[1];
-
-    // If token is missing after splitting, the format is invalid
+    // Check if any token was provided
     if (!token) {
-        return res.status(401).send('Access Denied: Malformed Token Format');
+        return res.status(401).json({ error: 'Access Denied: No Token Provided' });
     }
 
     try {

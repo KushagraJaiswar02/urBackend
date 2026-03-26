@@ -1,34 +1,44 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
+import api from '../utils/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(localStorage.getItem('devToken') || null);
-    const [user, setUser] = useState(() => {
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const response = await api.get('/api/auth/me');
+                if (response.data.success) {
+                    setUser(response.data.user);
+                }
+            } catch (err) {
+                console.error("Not authenticated:", err.message);
+                setUser(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkAuth();
+    }, []);
+
+    const logout = async () => {
         try {
-            const storedUser = localStorage.getItem('devUser');
-            return storedUser ? JSON.parse(storedUser) : null;
-        } catch {
-            return null;
+            await api.post('/api/auth/logout');
+        } catch (err) {
+            console.error("Logout failed:", err);
+        } finally {
+            setUser(null);
         }
-    });
-
-    // 1. Move logout here (before useEffect)
-    const logout = () => {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('devToken');
-        localStorage.removeItem('devUser');
     };
 
-    const login = (userData, authToken) => {
+    const login = (userData) => {
         setUser(userData);
-        setToken(authToken);
-        localStorage.setItem('devToken', authToken);
-        localStorage.setItem('devUser', JSON.stringify(userData));
     };
 
-    const value = { user, token, login, logout, isAuthenticated: !!token };
+    const value = { user, login, logout, isAuthenticated: !!user, isLoading };
 
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

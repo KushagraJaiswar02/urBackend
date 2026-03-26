@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { Shield, Trash2, User, Search, Mail, UserPlus, Key, X, AlertCircle, Edit2, Save, Settings } from 'lucide-react';
-import { API_URL } from '../config';
 
 // FUNCTION - DYNAMIC USER FORM
 const DynamicUserForm = ({ schema, formData, onChange, isEdit = false }) => {
@@ -120,7 +118,6 @@ const DynamicUserForm = ({ schema, formData, onChange, isEdit = false }) => {
 // FUNCTION - AUTH COMPONENT
 export default function Auth() {
     const { projectId } = useParams();
-    const { token } = useAuth();
     const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
@@ -149,17 +146,14 @@ export default function Auth() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const projRes = await axios.get(`${API_URL}/api/projects/${projectId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const projRes = await api.get(`/api/projects/${projectId}`);
                 
                 setProject(projRes.data);
 
                 if (projRes.data.isAuthEnabled) {
                     try {
-                        const usersRes = await axios.get(
-                            `${API_URL}/api/projects/${projectId}/collections/users/data`,
-                            { headers: { Authorization: `Bearer ${token}` } }
+                        const usersRes = await api.get(
+                            `/api/projects/${projectId}/collections/users/data`
                         );
                         setUsers(usersRes.data);
                     } catch {
@@ -175,17 +169,16 @@ export default function Auth() {
             }
         };
 
-        if (token) fetchData();
-    }, [projectId, token]);
+        fetchData();
+    }, [projectId]);
 
 // PATCH REQ FOR TOGGLE AUTH
     const handleEnableAuth = async () => {
         setIsEnabling(true);
         try {
-            const res = await axios.patch(
-                `${API_URL}/api/projects/${projectId}/auth/toggle`,
-                { enable: true },
-                { headers: { Authorization: `Bearer ${token}` } }
+            const res = await api.patch(
+                `/api/projects/${projectId}/auth/toggle`,
+                { enable: true }
             );
             
             setProject(res.data.project);
@@ -193,9 +186,8 @@ export default function Auth() {
             
             // Re-fetch users (should be empty now)
             try {
-                const usersRes = await axios.get(
-                    `${API_URL}/api/projects/${projectId}/collections/users/data`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                const usersRes = await api.get(
+                    `/api/projects/${projectId}/collections/users/data`
                 );
                 setUsers(usersRes.data);
             } catch {
@@ -215,10 +207,9 @@ export default function Auth() {
         if (e) e.preventDefault();
         setIsAdding(true);
         try {
-            const res = await axios.post(
-                `${API_URL}/api/projects/${projectId}/admin/users`,
-                addFormData,
-                { headers: { Authorization: `Bearer ${token}` } }
+            const res = await api.post(
+                `/api/projects/${projectId}/admin/users`,
+                addFormData
             );
             setUsers([res.data.user, ...users]);
             setIsAddModalOpen(false);
@@ -246,10 +237,9 @@ export default function Auth() {
 
         setIsResetting(true);
         try {
-            await axios.patch(
-                `${API_URL}/api/projects/${projectId}/admin/users/${resetTargetUser._id}/password`,
-                { newPassword: newPassVal },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.patch(
+                `/api/projects/${projectId}/admin/users/${resetTargetUser._id}/password`,
+                { newPassword: newPassVal }
             );
             toast.success("Password reset successfully!");
             setIsResetModalOpen(false);
@@ -264,9 +254,8 @@ export default function Auth() {
 // FUNCTION - FETCH USER FOR EDIT
     const handleEditClick = async (userId) => {
         try {
-            const res = await axios.get(
-                `${API_URL}/api/projects/${projectId}/admin/users/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
+            const res = await api.get(
+                `/api/projects/${projectId}/admin/users/${userId}`
             );
             setEditingUser(res.data);
             const customFields = { ...res.data };
@@ -281,19 +270,17 @@ export default function Auth() {
     const handleUpdateUser = async () => {
         setIsUpdatingUser(true);
         try {
-            await axios.put(
-                `${API_URL}/api/projects/${projectId}/admin/users/${editingUser._id}`,
-                editFormData,
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.put(
+                `/api/projects/${projectId}/admin/users/${editingUser._id}`,
+                editFormData
             );
             
             toast.success("User updated successfully!");
             setEditingUser(null);
             
             // Refresh list
-            const usersRes = await axios.get(
-                `${API_URL}/api/projects/${projectId}/collections/users/data`,
-                { headers: { Authorization: `Bearer ${token}` } }
+            const usersRes = await api.get(
+                `/api/projects/${projectId}/collections/users/data`
             );
             setUsers(usersRes.data);
         } catch (err) {
@@ -308,9 +295,8 @@ export default function Auth() {
         if (!confirm("Delete this user permanently? They won't be able to login.")) return;
 
         try {
-            await axios.delete(
-                `${API_URL}/api/projects/${projectId}/collections/users/data/${id}`,
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.delete(
+                `/api/projects/${projectId}/collections/users/data/${id}`
             );
             setUsers(users.filter(user => user._id !== id));
             toast.success("User deleted");

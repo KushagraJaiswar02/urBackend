@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,15 +9,13 @@ import { API_URL } from '../config';
 export default function Dashboard() {
     const [projects, setProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { token } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const response = await axios.get(`${API_URL}/api/projects`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await api.get('/api/projects');
                 setProjects(response.data);
             } catch (err) {
                 console.error(err);
@@ -27,8 +25,8 @@ export default function Dashboard() {
             }
         };
 
-        if (token) fetchProjects();
-    }, [token]);
+        if (user) fetchProjects();
+    }, [user]);
 
      const SkeletonLoader = () => (
         <div

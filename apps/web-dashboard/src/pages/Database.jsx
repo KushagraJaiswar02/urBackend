@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import ConfirmationModal from "./ConfirmationModal";
@@ -32,7 +32,7 @@ export default function Database() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   const [project, setProject] = useState(null);
   const [collections, setCollections] = useState([]);
@@ -65,11 +65,8 @@ export default function Database() {
 // DELETE REQ FOR COLLECTION
   const handleDeleteCollection = async (collectionName) => {
     try {
-      await axios.delete(
-        `${API_URL}/api/projects/${projectId}/collections/${collectionName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      await api.delete(
+        `/api/projects/${projectId}/collections/${collectionName}`
       );
 
       const updatedCollections = collections.filter(c => c.name !== collectionName);
@@ -91,9 +88,7 @@ export default function Database() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/projects/${projectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(`/api/projects/${projectId}`);
         setProject(res.data);
         setCollections(res.data.collections || []);
 
@@ -116,7 +111,7 @@ export default function Database() {
       }
     };
     fetchProject();
-  }, [projectId, token, searchParams]);
+  }, [projectId, user, searchParams]);
 
 // FUNCTION - FETCH DATA (PAGINATED/FILTERED)
   const fetchData = useCallback(async () => {
@@ -138,11 +133,8 @@ export default function Database() {
          }
       });
 
-      const res = await axios.get(
-        `${API_URL}/api/projects/${projectId}/collections/${activeCollection.name}/data${queryStr}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const res = await api.get(
+        `/api/projects/${projectId}/collections/${activeCollection.name}/data${queryStr}`
       );
       setData(res.data);
     } catch (err) {
@@ -151,7 +143,7 @@ export default function Database() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeCollection, projectId, token, queryParams]);
+  }, [activeCollection, projectId, queryParams]);
 
   // Fetch Data on Collection Change
   useEffect(() => {
@@ -166,11 +158,8 @@ export default function Database() {
     // if (!window.confirm("Are you sure you want to delete this document?"))
     //   return;
     try {
-      await axios.delete(
-        `${API_URL}/api/projects/${projectId}/collections/${activeCollection.name}/data/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      await api.delete(
+        `/api/projects/${projectId}/collections/${activeCollection.name}/data/${id}`
       );
       setData((prev) => prev.filter((item) => item._id !== id));
       toast.success("Document deleted");
@@ -183,12 +172,9 @@ export default function Database() {
   const handleAddDocument = async (submittedData) => {
     setIsSubmitting(true);
     try {
-      await axios.post(
-        `${API_URL}/api/projects/${projectId}/collections/${activeCollection.name}/data`,
-        submittedData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      await api.post(
+        `/api/projects/${projectId}/collections/${activeCollection.name}/data`,
+        submittedData
       );
 
       toast.success("Document added successfully");
@@ -212,12 +198,9 @@ export default function Database() {
     setIsSubmitting(true);
     try {
       const id = editingRecord._id;
-      const res = await axios.patch(
-        `${API_URL}/api/projects/${projectId}/collections/${activeCollection.name}/data/${id}`,
-        submittedData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const res = await api.patch(
+        `/api/projects/${projectId}/collections/${activeCollection.name}/data/${id}`,
+        submittedData
       );
 
       toast.success("Document updated successfully");

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import { Trash2, AlertTriangle, Save, CheckCircle, Copy, Server, Globe, Plus, X } from "lucide-react";
@@ -9,7 +9,7 @@ import ConfirmationModal from "./ConfirmationModal";
 
 export default function ProjectSettings() {
   const { projectId } = useParams();
-  const { token } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   // Used to control the Confirmation modal visibility
   const [showModal, setShowModal] = useState(false);
@@ -26,9 +26,7 @@ export default function ProjectSettings() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/projects/${projectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(`/api/projects/${projectId}`);
         setProject(res.data);
         // Set initial name for renaming
         setNewName(res.data.name);
@@ -39,7 +37,7 @@ export default function ProjectSettings() {
       }
     };
     fetchProject();
-  }, [projectId, token]);
+  }, [projectId, user]);
 
   // --- NEW: HANDLE RENAME ---
   const handleRename = async () => {
@@ -47,10 +45,9 @@ export default function ProjectSettings() {
 
     setRenaming(true);
     try {
-      await axios.patch(
-        `${API_URL}/api/projects/${projectId}`,
-        { name: newName },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.patch(
+        `/api/projects/${projectId}`,
+        { name: newName }
       );
       toast.success("Project renamed successfully!");
       // Update local state to reflect change immediately
@@ -67,9 +64,7 @@ export default function ProjectSettings() {
       return toast.error("Project name does not match");
 
     try {
-      await axios.delete(`${API_URL}/api/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/api/projects/${projectId}`);
       toast.success("Project deleted");
       navigate("/dashboard");
     } catch {
@@ -182,19 +177,16 @@ export default function ProjectSettings() {
         <AllowedDomainsForm
           project={project}
           projectId={projectId}
-          token={token}
           onProjectUpdate={setProject}
         />
         <DatabaseConfigForm
           project={project}
           projectId={projectId}
-          token={token}
           onProjectUpdate={setProject}
         />
         <StorageConfigForm
           project={project}
           projectId={projectId}
-          token={token}
           onProjectUpdate={setProject}
         />
       </div>
@@ -304,7 +296,7 @@ export default function ProjectSettings() {
   );
 }
 
-function DatabaseConfigForm({ project, projectId, token, onProjectUpdate }) {
+function DatabaseConfigForm({ project, projectId, onProjectUpdate }) {
   const [dbUri, setDbUri] = useState("");
   const [loading, setLoading] = useState(false);
   // Use optional chaining carefully - project might be null initially
@@ -321,7 +313,7 @@ function DatabaseConfigForm({ project, projectId, token, onProjectUpdate }) {
     // Fetch Server IP
     const fetchIp = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/server-ip`);
+        const res = await api.get(`/api/server-ip`);
         setServerIp(res.data.ip);
       } catch (e) {
         console.error("Failed to fetch server IP", e);
@@ -342,10 +334,9 @@ function DatabaseConfigForm({ project, projectId, token, onProjectUpdate }) {
 
     setLoading(true);
     try {
-      await axios.patch(
-        `${API_URL}/api/projects/${projectId}/byod-config`,
-        { dbUri },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.patch(
+        `/api/projects/${projectId}/byod-config`,
+        { dbUri }
       );
       toast.success("Database configuration updated!");
       setShowForm(false);
@@ -379,10 +370,9 @@ function DatabaseConfigForm({ project, projectId, token, onProjectUpdate }) {
 
   const executeRemove = async () => {
     try {
-      await axios.delete(
-        `${API_URL}/api/projects/${projectId}/byod-config/db`,
+      await api.delete(
+        `/api/projects/${projectId}/byod-config/db`,
         {
-          headers: { Authorization: `Bearer ${token}` },
           data: { projectId }
         }
       );
@@ -581,7 +571,7 @@ function DatabaseConfigForm({ project, projectId, token, onProjectUpdate }) {
   );
 }
 
-function StorageConfigForm({ project, projectId, token, onProjectUpdate }) {
+function StorageConfigForm({ project, projectId, onProjectUpdate }) {
   const [config, setConfig] = useState({
     storageUrl: "",
     storageKey: "",
@@ -606,10 +596,9 @@ function StorageConfigForm({ project, projectId, token, onProjectUpdate }) {
 
     setLoading(true);
     try {
-      await axios.patch(
-        `${API_URL}/api/projects/${projectId}/byod-config`,
-        config,
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.patch(
+        `/api/projects/${projectId}/byod-config`,
+        config
       );
       toast.success("Storage configuration updated!");
       setShowForm(false);
@@ -634,10 +623,9 @@ function StorageConfigForm({ project, projectId, token, onProjectUpdate }) {
 
   const executeRemove = async () => {
     try {
-      await axios.delete(
-        `${API_URL}/api/projects/${projectId}/byod-config/storage`,
+      await api.delete(
+        `/api/projects/${projectId}/byod-config/storage`,
         {
-          headers: { Authorization: `Bearer ${token}` },
           data: { projectId }
         }
       );
@@ -889,7 +877,7 @@ function StorageConfigForm({ project, projectId, token, onProjectUpdate }) {
   );
 }
 
-function AllowedDomainsForm({ project, projectId, token, onProjectUpdate }) {
+function AllowedDomainsForm({ project, projectId, onProjectUpdate }) {
   const [domains, setDomains] = useState(project?.allowedDomains || []);
   const [newDomain, setNewDomain] = useState("");
   const [loading, setLoading] = useState(false);
@@ -903,10 +891,9 @@ function AllowedDomainsForm({ project, projectId, token, onProjectUpdate }) {
   const handleUpdate = async (updatedDomains) => {
     setLoading(true);
     try {
-      await axios.patch(
-        `${API_URL}/api/projects/${projectId}/allowed-domains`,
-        { domains: updatedDomains },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.patch(
+        `/api/projects/${projectId}/allowed-domains`,
+        { domains: updatedDomains }
       );
       toast.success("Allowed domains updated!");
       setDomains(updatedDomains);

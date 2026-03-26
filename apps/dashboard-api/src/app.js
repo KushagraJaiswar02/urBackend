@@ -11,6 +11,7 @@ if (process.env.NODE_ENV !== 'test') {
 const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const app = express();
 app.set('trust proxy', 1);
@@ -24,6 +25,7 @@ const { emailQueue, authEmailQueue } = require('@urbackend/common');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 const dashboardLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -46,7 +48,8 @@ const whitelist = (function() {
 
 
 app.use(cors({
-  origin: whitelist.get(),
+    origin: whitelist.get(),
+    credentials: true,
 }));
 
 

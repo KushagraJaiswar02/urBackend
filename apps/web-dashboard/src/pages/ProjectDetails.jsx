@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
@@ -12,7 +12,7 @@ import { API_URL, PUBLIC_API_URL } from '../config';
 function ProjectDetails() {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const { token } = useAuth();
+    const { user } = useAuth();
 
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -22,9 +22,7 @@ function ProjectDetails() {
     useEffect(() => {
         const fetchProject = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/projects/${projectId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.get(`/api/projects/${projectId}`);
                 setProject(res.data);
             } catch (err){
                 toast.error("Failed to load project details");
@@ -34,16 +32,14 @@ function ProjectDetails() {
             }
         };
         fetchProject();
-    }, [projectId, token]);
+    }, [projectId, user]);
 
     const handleRegenerateKey = async (keyType) => {
         if (!window.confirm(`Are you sure you want to roll your ${keyType} key? The old key will stop working immediately.`)) return;
 
         setIsRegenerating(keyType);
         try {
-            const res = await axios.patch(`${API_URL}/api/projects/${projectId}/regenerate-key`, { keyType }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.patch(`/api/projects/${projectId}/regenerate-key`, { keyType });
             setNewKey({ key: res.data.apiKey, type: keyType });
             toast.success(`New ${keyType === 'publishable' ? 'Publishable' : 'Secret'} API Key Generated!`);
         } catch {

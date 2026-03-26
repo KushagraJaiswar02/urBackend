@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Copy, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
-import { API_URL } from '../config';
 
 
 function CreateProject() {
@@ -13,7 +12,7 @@ function CreateProject() {
     const [loading, setLoading] = useState(false);
     const [newProject, setNewProject] = useState(null);
 
-    const { token, user } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -50,9 +49,8 @@ function CreateProject() {
 
         setLoading(true);
         try {
-            const res = await axios.post(`${API_URL}/api/projects`,
-                { name, description },
-                { headers: { Authorization: `Bearer ${token}` } }
+            const res = await api.post(`/api/projects`,
+                { name, description }
             );
             setNewProject(res.data);
             toast.success("Project Created!");

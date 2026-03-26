@@ -15,8 +15,54 @@ const {
     verifyOtpSchema
 } = require("@urbackend/common");
 
-const JWT_EXPIRES_IN = '7d';
+const ACCESS_TOKEN_EXPIRES_IN = '15m';
+const REFRESH_TOKEN_EXPIRES_IN = '7d';
 const OTP_MAX_ATTEMPTS = 5;
+
+const sendTokenResponse = async (user, statusCode, res) => {
+    const accessToken = jwt.sign(
+        { _id: user._id, isVerified: user.isVerified, maxProjects: user.maxProjects },
+        process.env.JWT_SECRET,
+        { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
+    );
+
+    const refreshToken = jwt.sign(
+        { _id: user._id },
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+        { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
+    );
+
+    // Save refresh token to DB (Rotation)
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    const cookieOptions = {
+        httpOnly: true,
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict' // Use Strict for better CSRF protection
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+        cookieOptions.secure = true;
+    }
+
+    res.status(statusCode)
+        .cookie('accessToken', accessToken, { 
+            ...cookieOptions, 
+            expires: new Date(Date.now() + 15 * 60 * 1000) // 15 mins
+        })
+        .cookie('refreshToken', refreshToken, cookieOptions)
+        .json({
+            success: true,
+            user: {
+                _id: user._id,
+                email: user.email,
+                isVerified: user.isVerified,
+                maxProjects: user.maxProjects
+            }
+        });
+};
 
 async function createAndStoreOtp(userId) {
     const otp = crypto.randomInt(100000, 1000000).toString();
@@ -86,13 +132,7 @@ module.exports.login = async (req, res) => {
         const validPass = await bcrypt.compare(password, dev.password);
         if (!validPass) return res.status(400).json({ error: "Invalid password" });
 
-        // JWT EXPIRE
-        const token = jwt.sign(
-            { _id: dev._id, isVerified: dev.isVerified, maxProjects: dev.maxProjects },
-            process.env.JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-        res.json({ token });
+        await sendTokenResponse(dev, 200, res);
     } catch (err) {
         if (err instanceof z.ZodError) {
             return res.status(400).json({
@@ -188,14 +228,7 @@ module.exports.verifyOtp = async (req, res) => {
         existingUser.isVerified = true;
         await existingUser.save();
 
-        // JWT
-        const token = jwt.sign(
-            { _id: existingUser._id, isVerified: true, maxProjects: existingUser.maxProjects },
-            process.env.JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-
-        res.status(200).json({ message: "OTP verified successfully", token });
+        await sendTokenResponse(existingUser, 200, res);
     } catch (err) {
         if (err.status) return res.status(err.status).json({ error: err.message });
         if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
@@ -251,3 +284,65 @@ module.exports.resetPassword = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
+// LOGOUT
+module.exports.logout = async (req, res) => {
+    try {
+        if (req.user) {
+            const user = await Developer.findById(req.user._id);
+            if (user) {
+                user.refreshToken = null;
+                await user.save();
+            }
+        }
+
+        res.cookie('accessToken', 'none', {
+            expires: new Date(Date.now() + 10 * 1000),
+            httpOnly: true,
+        });
+        res.cookie('refreshToken', 'none', {
+            expires: new Date(Date.now() + 10 * 1000),
+            httpOnly: true,
+        });
+
+        res.status(200).json({ success: true, message: "Logged out successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+// REFRESH TOKEN
+module.exports.refreshToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({ error: "No refresh token provided" });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+        const user = await Developer.findById(decoded._id);
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(403).json({ error: "Invalid refresh token" });
+        }
+
+        await sendTokenResponse(user, 200, res);
+    } catch (err) {
+        console.error(err);
+        res.status(403).json({ error: "Invalid or expired refresh token" });
+    }
+};
+
+// GET ME
+module.exports.getMe = async (req, res) => {
+    try {
+        const user = await Developer.findById(req.user._id).select("-password -refreshToken");
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json({ success: true, user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};

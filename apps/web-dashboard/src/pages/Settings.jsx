@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Lock, Trash2, AlertTriangle, Save, CheckCircle } from 'lucide-react';
@@ -7,7 +7,7 @@ import { API_URL } from '../config';
 import ConfirmationModal from './ConfirmationModal';
 
 export default function Settings() {
-    const { token, logout } = useAuth();
+    const { logout } = useAuth();
 
     // Password State
     const [passData, setPassData] = useState({ currentPassword: '', newPassword: '' });
@@ -23,9 +23,7 @@ export default function Settings() {
         e.preventDefault();
         setLoadingPass(true);
         try {
-            await axios.put(`${API_URL}/api/auth/change-password`, passData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.put(`/api/auth/change-password`, passData);
             toast.success("Password updated!");
             setPassData({ currentPassword: '', newPassword: '' });
         } catch (err) {
@@ -39,9 +37,8 @@ export default function Settings() {
     const executeDeleteAccount = async () => {
         setLoadingDelete(true);
         try {
-            // DELETE requests miein body bhejne ke liye 'data' key use karni padti hai
-            await axios.delete(`${API_URL}/api/auth/delete-account`, {
-                headers: { Authorization: `Bearer ${token}` },
+            // api utility handles credentials
+            await api.delete(`/api/auth/delete-account`, {
                 data: { password: deletePass }
             });
 

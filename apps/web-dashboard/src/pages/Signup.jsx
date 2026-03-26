@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { API_URL } from '../config';
 import { Terminal } from 'lucide-react';
 
 function Signup() {
@@ -13,6 +12,16 @@ function Signup() {
     });
 
     const navigate = useNavigate();
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+    // If already authenticated, redirect to dashboard
+    useEffect(() => {
+        if (!authLoading && isAuthenticated) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, authLoading, navigate]);
+
+    if (authLoading) return null;
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,7 +38,7 @@ function Signup() {
         const loadingToast = toast.loading('Creating your account...');
 
         try {
-            const response = await axios.post(`${API_URL}/api/auth/register`, formData);
+            const response = await api.post('/api/auth/register', formData);
 
             toast.dismiss(loadingToast);
             toast.success(response.data.message);

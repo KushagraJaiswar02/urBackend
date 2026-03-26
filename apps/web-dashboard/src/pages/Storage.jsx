@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { UploadCloud, Trash2, File, ExternalLink, HardDrive, AlertTriangle } from 'lucide-react';
@@ -8,7 +8,7 @@ import { API_URL } from '../config';
 
 export default function Storage() {
     const { projectId } = useParams();
-    const { token, user } = useAuth();
+    const { user } = useAuth();
 
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,20 +19,18 @@ export default function Storage() {
     // 1. Fetch Files
     const fetchFiles = useCallback(async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/projects/${projectId}/storage/files`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get(`/api/projects/${projectId}/storage/files`);
             setFiles(res.data);
         } catch {
             toast.error("Failed to load files");
         } finally {
             setLoading(false);
         }
-    }, [projectId, token]);
+    }, [projectId]);
 
     useEffect(() => {
-        if (token) fetchFiles();
-    }, [projectId, token, fetchFiles]);
+        fetchFiles();
+    }, [projectId, fetchFiles]);
 
     // 2. Handle File Upload
     const handleFileSelect = async (e) => {
@@ -51,9 +49,8 @@ export default function Storage() {
         const toastId = toast.loading("Uploading...");
 
         try {
-            await axios.post(`${API_URL}/api/projects/${projectId}/storage/upload`, formData, {
+            await api.post(`/api/projects/${projectId}/storage/upload`, formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
@@ -77,9 +74,8 @@ export default function Storage() {
         if (!confirm("Delete this file permanently?")) return;
 
         try {
-            await axios.post(`${API_URL}/api/projects/${projectId}/storage/delete`,
-                { path },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.post(`/api/projects/${projectId}/storage/delete`,
+                { path }
             );
             setFiles(files.filter(f => f.path !== path));
             toast.success("File deleted");
@@ -99,9 +95,7 @@ export default function Storage() {
 
         setDeletingAll(true);
         try {
-            await axios.delete(`${API_URL}/api/projects/${projectId}/storage/files`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/projects/${projectId}/storage/files`);
             setFiles([]);
             toast.success("All files deleted.");
         } catch {

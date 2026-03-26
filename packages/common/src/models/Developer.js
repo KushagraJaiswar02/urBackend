@@ -17,6 +17,10 @@ const developerSchema = new mongoose.Schema({
     maxProjects: {
         type: Number,
         default: 3
+    },
+    refreshToken: {
+        type: String,
+        default: null
     }
 }, { timestamps: true });
 

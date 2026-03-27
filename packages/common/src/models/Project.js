@@ -25,7 +25,17 @@ fieldSchema.add({ fields: [fieldSchema] });
 
 const collectionSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    model: [fieldSchema]
+    model: [fieldSchema],
+    rls: {
+        enabled: { type: Boolean, default: false },
+        mode: {
+            type: String,
+            enum: ['owner-write-only'],
+            default: 'owner-write-only'
+        },
+        ownerField: { type: String, default: 'userId' },
+        requireAuthForWrite: { type: Boolean, default: true }
+    }
 });
 
 const projectSchema = new mongoose.Schema({

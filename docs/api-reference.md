@@ -9,6 +9,7 @@
 | **Data** | `GET` | `/api/data/:collectionName/:id` | Get document by ID |
 | **Data** | `POST` | `/api/data/:collectionName` | Insert new document |
 | **Data** | `PUT` | `/api/data/:collectionName/:id` | Update document by ID |
+| **Data** | `PATCH` | `/api/data/:collectionName/:id` | Partially update document by ID |
 | **Data** | `DELETE` | `/api/data/:collectionName/:id` | Delete document by ID |
 | **Storage** | `POST` | `/api/storage/upload` | Upload a file |
 | **Storage** | `DELETE` | `/api/storage/file` | Delete a file by path |
@@ -19,6 +20,6 @@
 - `201 Created`: Document/User/File created successfully.
 - `400 Bad Request`: Validation failure or malformed JSON.
 - `401 Unauthorized`: Missing/Invalid API Key or expired JWT.
-- `403 Forbidden`: Resource limit (Quota) exceeded.
+- `403 Forbidden`: Resource limit (Quota) exceeded or blocked by RLS policy.
 - `404 Not Found`: Collection, document, or file does not exist.
 - `500 Server Error`: Unexpected problem on our end.

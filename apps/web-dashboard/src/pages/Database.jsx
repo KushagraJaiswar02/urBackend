@@ -14,6 +14,7 @@ import {
   Plus,
   RefreshCw,
   Code,
+  Shield,
   Table as TableIcon,
   List as ListIcon,
   Menu,
@@ -22,7 +23,8 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 
 import { API_URL } from "../config";
@@ -56,6 +58,10 @@ export default function Database() {
       filters: [] // Format: { field: '', operator: '', value: '' }
   });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [rlsEnabled, setRlsEnabled] = useState(false);
+  const [rlsOwnerField, setRlsOwnerField] = useState("userId");
+  const [isSavingRls, setIsSavingRls] = useState(false);
+  const [isRlsDialogOpen, setIsRlsDialogOpen] = useState(false);
 
   const fetchShowModal = (id) => {
     setShowModal(true);
@@ -89,21 +95,31 @@ export default function Database() {
     const fetchProject = async () => {
       try {
         const res = await api.get(`/api/projects/${projectId}`);
+        const withRlsDefaults = (res.data.collections || []).map(c => ({
+          ...c,
+          rls: c.rls || {
+            enabled: false,
+            mode: "owner-write-only",
+            ownerField: c.name === 'users' ? '_id' : 'userId',
+            requireAuthForWrite: true
+          }
+        }));
+
         setProject(res.data);
-        setCollections(res.data.collections || []);
+        setCollections(withRlsDefaults);
 
         const queryCollection = searchParams.get("collection");
         if (queryCollection) {
-          const found = res.data.collections.find(
+          const found = withRlsDefaults.find(
             (c) => c.name === queryCollection
           );
           if (found) setActiveCollection(found);
         } else {
-          const filtered = res.data.collections.filter(c => c.name !== 'users');
+          const filtered = withRlsDefaults.filter(c => c.name !== 'users');
           if (filtered.length > 0) {
             setActiveCollection(filtered[0]);
-          } else if (res.data.collections.length > 0) {
-            setActiveCollection(res.data.collections[0]);
+          } else if (withRlsDefaults.length > 0) {
+            setActiveCollection(withRlsDefaults[0]);
           }
         }
       } catch {
@@ -153,6 +169,56 @@ export default function Database() {
     fetchData();
     if (window.innerWidth <= 768) setIsSidebarOpen(false);
   }, [activeCollection, fetchData, setSearchParams]);
+
+  useEffect(() => {
+    if (!activeCollection) return;
+    const modelKeys = (activeCollection.model || []).map(f => f.key);
+    const fallbackOwner = activeCollection.name === 'users'
+      ? '_id'
+      : (modelKeys.includes('userId') ? 'userId' : (modelKeys.includes('ownerId') ? 'ownerId' : 'userId'));
+    setRlsEnabled(!!activeCollection?.rls?.enabled);
+    setRlsOwnerField(activeCollection?.rls?.ownerField || fallbackOwner);
+  }, [activeCollection]);
+
+  const handleSaveRls = async () => {
+    if (!activeCollection) return false;
+    setIsSavingRls(true);
+    try {
+      const res = await api.patch(
+        `/api/projects/${projectId}/collections/${activeCollection.name}/rls`,
+        {
+          enabled: rlsEnabled,
+          mode: "owner-write-only",
+          ownerField: rlsOwnerField,
+          requireAuthForWrite: true
+        }
+      );
+
+      const updatedRls = res.data?.collection?.rls || {
+        enabled: rlsEnabled,
+        mode: "owner-write-only",
+        ownerField: rlsOwnerField,
+        requireAuthForWrite: true
+      };
+
+      setCollections(prev => prev.map(c => c.name === activeCollection.name ? { ...c, rls: updatedRls } : c));
+      setActiveCollection(prev => prev ? { ...prev, rls: updatedRls } : prev);
+      toast.success("RLS settings saved");
+      return true;
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || err.response?.data?.error || "Failed to save RLS settings");
+      return false;
+    } finally {
+      setIsSavingRls(false);
+    }
+  };
+
+  const rlsOwnerFieldOptions = (() => {
+    if (!activeCollection) return [];
+    const modelKeys = (activeCollection.model || []).map((f) => f.key).filter(Boolean);
+    return [...new Set(["_id", ...modelKeys, "userId", "ownerId"])];
+  })();
 
   const handleDelete = async (id) => {
     // if (!window.confirm("Are you sure you want to delete this document?"))
@@ -515,6 +581,23 @@ export default function Database() {
                 </button>
 
                 <button
+                  onClick={() => setIsRlsDialogOpen(true)}
+                  className="btn btn-secondary"
+                  title="Configure Row Level Security"
+                >
+                  <Shield size={16} />
+                  <span className="hide-mobile">RLS</span>
+                  <span style={{
+                    marginLeft: "0.35rem",
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "999px",
+                    display: "inline-block",
+                    background: activeCollection?.rls?.enabled ? "var(--color-primary)" : "var(--color-border)"
+                  }} />
+                </button>
+
+                <button
                   onClick={() => setIsAddModalOpen(true)}
                   className="btn btn-primary"
                 >
@@ -639,6 +722,75 @@ export default function Database() {
           isSubmitting={isSubmitting}
           initialData={editingRecord}
         />
+      )}
+
+      {isRlsDialogOpen && activeCollection && (
+        <div className="rls-dialog-overlay" onClick={() => setIsRlsDialogOpen(false)}>
+          <div className="rls-dialog slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="rls-dialog-header">
+              <div className="rls-dialog-title-wrap">
+                <Shield size={18} />
+                <h3>RLS Settings</h3>
+              </div>
+              <button className="btn-icon" onClick={() => setIsRlsDialogOpen(false)} aria-label="Close RLS dialog">
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="rls-dialog-subtitle">
+              Collection: <strong>{activeCollection.name}</strong> | Mode: <strong>owner-write-only</strong>
+            </p>
+
+            <label className="rls-checkbox-row">
+              <input
+                type="checkbox"
+                checked={rlsEnabled}
+                onChange={(e) => setRlsEnabled(e.target.checked)}
+                style={{ accentColor: "var(--color-primary)" }}
+              />
+              <span>Enable RLS for publishable-key writes</span>
+            </label>
+
+            <div className="rls-owner-field-group">
+              <label htmlFor="rls-owner-field">Owner Field</label>
+              <select
+                id="rls-owner-field"
+                value={rlsOwnerField}
+                onChange={(e) => setRlsOwnerField(e.target.value)}
+                className="form-input"
+              >
+                {rlsOwnerFieldOptions.map((field) => (
+                  <option key={field} value={field}>
+                    {field}
+                  </option>
+                ))}
+              </select>
+              <p className="rls-help-text">
+                `userId` means the field in each document that stores the logged-in user's id.
+                Example: `posts.userId` or `orders.ownerId`. For the users collection, `_id` is usually the correct owner field.
+              </p>
+              <p className="rls-help-text">
+                When RLS is enabled, publishable-key writes also require `Authorization: Bearer &lt;user_jwt&gt;`.
+              </p>
+            </div>
+
+            <div className="rls-dialog-actions">
+              <button className="btn btn-secondary" onClick={() => setIsRlsDialogOpen(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={isSavingRls}
+                onClick={async () => {
+                  const saved = await handleSaveRls();
+                  if (saved) setIsRlsDialogOpen(false);
+                }}
+              >
+                {isSavingRls ? "Saving..." : "Save RLS"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <style>{`
@@ -968,6 +1120,86 @@ export default function Database() {
                     justify-content: flex-end;
                     gap: 12px;
                     margin-top: 2rem;
+                }
+
+                .rls-dialog-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.55);
+                    backdrop-filter: blur(4px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1200;
+                    padding: 1rem;
+                }
+
+                .rls-dialog {
+                    width: min(520px, 100%);
+                    background: rgba(15, 15, 15, 0.95);
+                    border: 1px solid var(--color-border);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+                }
+
+                .rls-dialog-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 0.5rem;
+                }
+
+                .rls-dialog-title-wrap {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.55rem;
+                }
+
+                .rls-dialog-title-wrap h3 {
+                    margin: 0;
+                    font-size: 1rem;
+                    font-weight: 600;
+                }
+
+                .rls-dialog-subtitle {
+                    margin: 0 0 1rem 0;
+                    font-size: 0.85rem;
+                    color: var(--color-text-muted);
+                }
+
+                .rls-checkbox-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    color: var(--color-text-muted);
+                    font-size: 0.92rem;
+                    margin-bottom: 1rem;
+                }
+
+                .rls-owner-field-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+
+                .rls-owner-field-group label {
+                    font-size: 0.85rem;
+                    color: var(--color-text-muted);
+                }
+
+                .rls-help-text {
+                    margin: 0;
+                    font-size: 0.8rem;
+                    line-height: 1.45;
+                    color: var(--color-text-muted);
+                }
+
+                .rls-dialog-actions {
+                    margin-top: 1rem;
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 0.5rem;
                 }
                 
                 .field-type-hint {

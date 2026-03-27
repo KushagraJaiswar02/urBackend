@@ -13,6 +13,15 @@ Replace `:collectionName` with the name of your collection (e.g., `posts`, `comm
 
 **Endpoint**: `POST /api/data/:collectionName`
 
+By default, write operations require your **secret key**.
+
+If you enable **RLS (owner-write-only)** for a collection from the dashboard, publishable-key writes are also allowed but must include a valid user token:
+
+- `x-api-key: pk_live_...`
+- `Authorization: Bearer <user_jwt>`
+
+Under RLS, writes are permitted only for documents owned by the authenticated user (based on configured `ownerField`).
+
 ```javascript
 await fetch('https://api.ub.bitbros.in/api/data/posts', {
   method: 'POST',
@@ -50,6 +59,9 @@ await fetch(`https://api.ub.bitbros.in/api/data/posts/${postId}`, {
   })
 });
 ```
+
+### Partial Update
+**Endpoint**: `PATCH /api/data/:collectionName/:id`
 
 ## 4. Delete a Document
 

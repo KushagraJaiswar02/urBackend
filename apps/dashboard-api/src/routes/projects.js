@@ -27,7 +27,8 @@ const {
     deleteExternalStorageConfig,
     analytics,
     updateAllowedDomains,
-    toggleAuth
+    toggleAuth,
+    updateCollectionRls
 } = require("../controllers/project.controller")
 
 const { createAdminUser, resetPassword, getUserDetails, updateAdminUser } = require('../controllers/userAuth.controller');
@@ -100,6 +101,9 @@ router.get('/:projectId/analytics', authMiddleware, analytics);
 
 // PATCH REQ FOR TOGGLE AUTH
 router.patch('/:projectId/auth/toggle', authMiddleware, verifyEmail, toggleAuth);
+
+// PATCH REQ FOR COLLECTION RLS SETTINGS
+router.patch('/:projectId/collections/:collectionName/rls', authMiddleware, verifyEmail, updateCollectionRls);
 
 // ADMIN AUTH ROUTES
 const {checkAuthEnabled} = require('@urbackend/common');

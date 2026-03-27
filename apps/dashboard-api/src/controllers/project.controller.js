@@ -25,6 +25,27 @@ const validateUsersSchema = (schema) => {
     return !!(hasEmail && hasPassword);
 };
 
+const getDefaultRlsForCollection = (collectionName, schema = []) => {
+    const normalizedName = String(collectionName || '').toLowerCase();
+    const keys = Array.isArray(schema) ? schema.map(f => f?.key).filter(Boolean) : [];
+
+    let ownerField = 'userId';
+    if (normalizedName === 'users') {
+        ownerField = '_id';
+    } else if (keys.includes('userId')) {
+        ownerField = 'userId';
+    } else if (keys.includes('ownerId')) {
+        ownerField = 'ownerId';
+    }
+
+    return {
+        enabled: false,
+        mode: 'owner-write-only',
+        ownerField,
+        requireAuthForWrite: true
+    };
+};
+
 
 
 
@@ -124,10 +145,24 @@ module.exports.getSingleProject = async (req, res) => {
                 if (col.name === 'users' && col.model) {
                     return {
                         ...col,
-                        model: col.model.filter(m => m.key !== 'password')
+                        model: col.model.filter(m => m.key !== 'password'),
+                        rls: col.rls || {
+                            enabled: false,
+                            mode: 'owner-write-only',
+                            ownerField: '_id',
+                            requireAuthForWrite: true
+                        }
                     };
                 }
-                return col;
+                return {
+                    ...col,
+                    rls: col.rls || {
+                        enabled: false,
+                        mode: 'owner-write-only',
+                        ownerField: 'userId',
+                        requireAuthForWrite: true
+                    }
+                };
             });
         }
         
@@ -324,7 +359,11 @@ module.exports.createCollection = async (req, res) => {
             }
         }
 
-        project.collections.push({ name: collectionName, model: schema });
+        project.collections.push({
+            name: collectionName,
+            model: schema,
+            rls: getDefaultRlsForCollection(collectionName, schema)
+        });
         await project.save();
 
         await deleteProjectById(projectId);
@@ -930,10 +969,24 @@ module.exports.toggleAuth = async (req, res) => {
                 if (col.name === 'users' && col.model) {
                     return {
                         ...col,
-                        model: col.model.filter(m => m.key !== 'password')
+                        model: col.model.filter(m => m.key !== 'password'),
+                        rls: col.rls || {
+                            enabled: false,
+                            mode: 'owner-write-only',
+                            ownerField: '_id',
+                            requireAuthForWrite: true
+                        }
                     };
                 }
-                return col;
+                return {
+                    ...col,
+                    rls: col.rls || {
+                        enabled: false,
+                        mode: 'owner-write-only',
+                        ownerField: 'userId',
+                        requireAuthForWrite: true
+                    }
+                };
             });
         }
 
@@ -941,6 +994,60 @@ module.exports.toggleAuth = async (req, res) => {
             message: `Authentication ${project.isAuthEnabled ? 'enabled' : 'disabled'} successfully`, 
             isAuthEnabled: project.isAuthEnabled,
             project: projectObj
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// PATCH REQ - UPDATE COLLECTION RLS (V1)
+module.exports.updateCollectionRls = async (req, res) => {
+    try {
+        const { projectId, collectionName } = req.params;
+        const { enabled, mode, ownerField, requireAuthForWrite } = req.body || {};
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user._id });
+        if (!project) return res.status(404).json({ error: "Project not found" });
+
+        const collection = project.collections.find(c => c.name === collectionName);
+        if (!collection) return res.status(404).json({ error: "Collection not found" });
+
+        const validMode = mode || collection?.rls?.mode || 'owner-write-only';
+        if (validMode !== 'owner-write-only') {
+            return res.status(400).json({ error: "Unsupported RLS mode. Only 'owner-write-only' is allowed in V1." });
+        }
+
+        const modelKeys = (collection.model || []).map(f => f.key);
+        const nextOwnerField = ownerField || collection?.rls?.ownerField || 'userId';
+
+        if (nextOwnerField !== '_id' && !modelKeys.includes(nextOwnerField)) {
+            return res.status(400).json({
+                error: "Invalid owner field",
+                message: `ownerField '${nextOwnerField}' not found in collection schema`
+            });
+        }
+
+        collection.rls = {
+            enabled: typeof enabled === 'boolean' ? enabled : !!collection?.rls?.enabled,
+            mode: validMode,
+            ownerField: nextOwnerField,
+            requireAuthForWrite: typeof requireAuthForWrite === 'boolean'
+                ? requireAuthForWrite
+                : (collection?.rls?.requireAuthForWrite ?? true)
+        };
+
+        await project.save();
+
+        await deleteProjectById(projectId);
+        await deleteProjectByApiKeyCache(project.publishableKey);
+        await deleteProjectByApiKeyCache(project.secretKey);
+
+        res.json({
+            message: "Collection RLS updated",
+            collection: {
+                name: collection.name,
+                rls: collection.rls
+            }
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

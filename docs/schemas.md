@@ -16,9 +16,24 @@ Every field in your collection must have a type. Here are the types urBackend su
 | **Array** | A list of values. | `"tags": ["tech", "ai"]` |
 | **Ref** | Reference to another document ID. | `"author": "642f9..."` |
 
+## Type Matching Rules (important)
+
+- `String` fields must receive strings (`"42"` is valid, `42` is not).
+- `Number` fields must receive numbers.
+- `Boolean` fields must receive `true/false`.
+- `Object` fields must receive JSON objects.
+- `Array` fields must receive arrays.
+- `Ref` fields should store valid MongoDB ObjectId strings referencing the target collection.
+
 ## 1. Required Fields ⚠️
 
 When you toggle a field as **Required** in the dashboard, the API will reject any `POST` or `PUT` request that doesn't include that field. This ensures your database always has the data your application needs.
+
+```json
+{
+  "error": "Validation failed: email is required"
+}
+```
 
 ## 2. Nested Objects 📦
 
@@ -54,7 +69,17 @@ References allow you to link documents between collections (similar to foreign k
 - **Usage**: Store the `_id` of the document you want to link to.
 - **Benefit**: This enables you to build relational data structures while keeping the flexibility of NoSQL.
 
+```json
+{
+  "content": "Hello world",
+  "userId": "64fd1234abcd5678ef901234"
+}
+```
+
 ---
 
 > [!TIP]
 > Always define your **"users"** collection schema manually before enabling Authentication to ensure your custom user fields (like `avatar` or `role`) are properly validated.
+
+> [!IMPORTANT]
+> For Auth, `users` must include required `email` and `password` string fields.

@@ -19,6 +19,14 @@
 | **Storage** | `POST` | `/api/storage/upload` | Upload a file |
 | **Storage** | `DELETE` | `/api/storage/file` | Delete a file by path |
 
+## Common Headers
+
+| Header | Required | Purpose |
+| :--- | :--- | :--- |
+| `x-api-key` | Yes | Project API key (`pk_live_*` or `sk_live_*`) |
+| `Authorization: Bearer <jwt>` | Required for `pk_live` writes with RLS | End-user identity for owner-based write checks |
+| `Content-Type: application/json` | Required for JSON requests | Body parsing and validation |
+
 ## Status Code Reference
 
 - `200 OK`: Request succeeded.
@@ -34,3 +42,35 @@
 - `pk_live` can always perform read requests on `/api/data/*`.
 - `pk_live` write requests on `/api/data/*` require collection-level RLS + user Bearer token.
 - `users` collection operations are routed through `/api/userAuth/*`; `/api/data/users*` is blocked.
+
+## Quick Write Matrix
+
+| Key | Token | RLS Enabled | Result (non-users collections) |
+| :--- | :--- | :--- | :--- |
+| `pk_live` | No | Any | ❌ Write blocked |
+| `pk_live` | Yes | No | ❌ Write blocked |
+| `pk_live` | Yes | Yes | ✅ Allowed for owner-constrained writes |
+| `sk_live` | No | Any | ✅ Allowed (server-trusted context) |
+
+## Practical Examples
+
+### Create document with secret key
+
+```bash
+curl -X POST "https://api.ub.bitbros.in/api/data/posts" ^
+  -H "x-api-key: sk_live_xxx" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"content\":\"Server side insert\",\"userId\":\"USER_ID\"}"
+```
+
+### Create document with publishable key + RLS + JWT
+
+```bash
+curl -X POST "https://api.ub.bitbros.in/api/data/posts" ^
+  -H "x-api-key: pk_live_xxx" ^
+  -H "Authorization: Bearer USER_JWT" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"content\":\"Client insert\"}"
+```
+
+Expected: `201` with owner field auto-filled when missing.

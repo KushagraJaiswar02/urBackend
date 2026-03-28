@@ -10,7 +10,7 @@ We use two distinct types of API keys to prevent accidental data leaks:
 
 | Key Type | Prefix | Shared Environment | Access Level |
 | :--- | :--- | :--- | :--- |
-| **Publishable** | `pk_live_` | Frontend / Client | Read-Only (Safe if leaked) |
+| **Publishable** | `pk_live_` | Frontend / Client | Read by default; writes only with RLS + user JWT |
 | **Secret** | `sk_live_` | Backend / Server | Full Access (CRUD) |
 
 > [!CAUTION]
@@ -31,3 +31,15 @@ In your dashboard, you can restrict API access to specific domains. When enabled
 
 ### 4. Schema Enforcement
 When you define a schema, urBackend uses **Mongoose Model Validation** to ensure no "dirty" or unexpected data is saved to your database.
+
+## Key Usage Rules (must follow)
+
+- Use `pk_live` only in frontend/client apps.
+- Use `sk_live` only on trusted server/backend environments.
+- Never expose `sk_live` in browser bundles, client logs, or public repos.
+- For end-user writes from frontend, enable RLS and send user JWT in `Authorization` header.
+
+## Special Case: `users` Collection
+
+- `/api/data/users*` is blocked intentionally.
+- Use `/api/userAuth/*` for signup, login, profile, and password flows.

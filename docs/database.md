@@ -45,8 +45,18 @@ await fetch('https://api.ub.bitbros.in/api/data/posts', {
 ### Fetch All
 **Endpoint**: `GET /api/data/:collectionName`
 
+```bash
+curl "https://api.ub.bitbros.in/api/data/posts" ^
+  -H "x-api-key: pk_live_xxx"
+```
+
 ### Fetch Single Document
 **Endpoint**: `GET /api/data/:collectionName/:id`
+
+```bash
+curl "https://api.ub.bitbros.in/api/data/posts/64fd1234abcd5678ef901234" ^
+  -H "x-api-key: pk_live_xxx"
+```
 
 ## 3. Update a Document
 
@@ -68,9 +78,24 @@ await fetch(`https://api.ub.bitbros.in/api/data/posts/${postId}`, {
 ### Partial Update
 **Endpoint**: `PATCH /api/data/:collectionName/:id`
 
+```javascript
+await fetch(`https://api.ub.bitbros.in/api/data/posts/${postId}`, {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json', 'x-api-key': 'YOUR_KEY' },
+  body: JSON.stringify({
+    title: "Edited title only"
+  })
+});
+```
+
 ## 4. Delete a Document
 
 **Endpoint**: `DELETE /api/data/:collectionName/:id`
+
+```bash
+curl -X DELETE "https://api.ub.bitbros.in/api/data/posts/64fd1234abcd5678ef901234" ^
+  -H "x-api-key: sk_live_xxx"
+```
 
 ## Validation & Schemas
 
@@ -79,3 +104,10 @@ If you define a schema in the dashboard, urBackend will enforce it for every `PO
 - **Object Support**: You can define a field as an `Object` and send nested JSON.
 - **Array Support**: Define a field as an `Array` for lists of data.
 - **References (Ref)**: Link documents across collections by storing their `_id`.
+
+## Common Failure Cases (and why)
+
+- `401 Unauthorized`: missing/invalid API key or missing/invalid JWT for `pk_live` writes under RLS.
+- `403 Forbidden`: owner mismatch in RLS write checks.
+- `400 Bad Request`: schema validation failed (wrong type/missing required field).
+- `404 Not Found`: collection or document id does not exist.

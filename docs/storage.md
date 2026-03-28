@@ -23,6 +23,15 @@ const { url, path } = await res.json();
 // path: "project_id/image.jpg"
 ```
 
+Expected response shape:
+
+```json
+{
+  "url": "https://storage.urbackend.bitbros.in/PROJECT_ID/file.png",
+  "path": "PROJECT_ID/file.png"
+}
+```
+
 > [!NOTE]
 > Do **NOT** set the `Content-Type` header manually for file uploads; the browser will handle it for you when you pass a `FormData` object.
 
@@ -42,8 +51,16 @@ await fetch('https://api.ub.bitbros.in/api/storage/file', {
 });
 ```
 
+If `path` is invalid or already removed, API returns `404`.
+
 ## Limits
 
 - **File Size**: Maximum **10 MB** per file.
 - **Storage Quota**: Total storage depends on your project's plan (default: **100 MB**).
 - **Public Access**: All uploaded files are publicly accessible via the returned URL. Do not upload sensitive, private documents.
+
+## Troubleshooting
+
+- `400 Bad Request`: usually missing `file` in multipart form.
+- `401 Unauthorized`: missing/invalid API key.
+- `413 Payload Too Large`: file exceeds max size limit.

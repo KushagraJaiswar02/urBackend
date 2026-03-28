@@ -36,6 +36,14 @@ module.exports = async (req, res, next) => {
         }
 
         const ownerField = rls.ownerField || 'userId';
+
+        if (!req.authUser?.userId) {
+            return res.status(401).json({
+                error: 'Authentication required',
+                message: 'Provide a valid user Bearer token for write operations.'
+            });
+        }
+
         const authUserId = String(req.authUser.userId);
         const method = String(req.method || '').toUpperCase();
 

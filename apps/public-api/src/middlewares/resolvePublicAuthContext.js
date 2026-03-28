@@ -1,8 +1,13 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
-    const authHeader = req.header('Authorization');
     req.authUser = null;
+
+    if (req.keyRole === 'secret') {
+        return next();
+    }
+
+    const authHeader = req.header('Authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return next();

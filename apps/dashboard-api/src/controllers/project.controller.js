@@ -156,12 +156,7 @@ module.exports.getSingleProject = async (req, res) => {
                 }
                 return {
                     ...col,
-                    rls: col.rls || {
-                        enabled: false,
-                        mode: 'owner-write-only',
-                        ownerField: 'userId',
-                        requireAuthForWrite: true
-                    }
+                    rls: col.rls || getDefaultRlsForCollection(col.name, col.model)
                 };
             });
         }
@@ -980,12 +975,7 @@ module.exports.toggleAuth = async (req, res) => {
                 }
                 return {
                     ...col,
-                    rls: col.rls || {
-                        enabled: false,
-                        mode: 'owner-write-only',
-                        ownerField: 'userId',
-                        requireAuthForWrite: true
-                    }
+                    rls: col.rls || getDefaultRlsForCollection(col.name, col.model)
                 };
             });
         }
@@ -1024,6 +1014,14 @@ module.exports.updateCollectionRls = async (req, res) => {
             return res.status(400).json({
                 error: "Invalid owner field",
                 message: `ownerField '${nextOwnerField}' not found in collection schema`
+            });
+        }
+
+        // Restrict use of '_id' as ownerField to the 'users' collection only.
+        if (nextOwnerField === '_id' && collection.name !== 'users') {
+            return res.status(400).json({
+                error: "Invalid owner field",
+                message: "ownerField '_id' is only allowed for the 'users' collection"
             });
         }
 

@@ -95,15 +95,30 @@ export default function Database() {
     const fetchProject = async () => {
       try {
         const res = await api.get(`/api/projects/${projectId}`);
-        const withRlsDefaults = (res.data.collections || []).map(c => ({
-          ...c,
-          rls: c.rls || {
-            enabled: false,
-            mode: "owner-write-only",
-            ownerField: c.name === 'users' ? '_id' : 'userId',
-            requireAuthForWrite: true
+        const withRlsDefaults = (res.data.collections || []).map(c => {
+          const schemaKeys = (c.model || []).map(f => f?.key).filter(Boolean);
+          // Derive a schema-valid ownerField: prefer userId, then ownerId, then the
+          // first schema key as a prompt for the user to review before saving.
+          let derivedOwnerField;
+          if (c.name === 'users') {
+            derivedOwnerField = '_id';
+          } else if (schemaKeys.includes('userId')) {
+            derivedOwnerField = 'userId';
+          } else if (schemaKeys.includes('ownerId')) {
+            derivedOwnerField = 'ownerId';
+          } else {
+            derivedOwnerField = schemaKeys[0] || '';
           }
-        }));
+          return {
+            ...c,
+            rls: c.rls || {
+              enabled: false,
+              mode: "owner-write-only",
+              ownerField: derivedOwnerField,
+              requireAuthForWrite: true
+            }
+          };
+        });
 
         setProject(res.data);
         setCollections(withRlsDefaults);
@@ -216,8 +231,11 @@ export default function Database() {
 
   const rlsOwnerFieldOptions = (() => {
     if (!activeCollection) return [];
-    const modelKeys = (activeCollection.model || []).map((f) => f.key).filter(Boolean);
-    return [...new Set(["_id", ...modelKeys, "userId", "ownerId"])];
+    const schemaKeys = (activeCollection.model || []).map((f) => f.key).filter(Boolean);
+    if (activeCollection.name === 'users') {
+      return ['_id', ...schemaKeys.filter(k => k !== '_id')];
+    }
+    return schemaKeys;
   })();
 
   const handleDelete = async (id) => {
@@ -726,11 +744,17 @@ export default function Database() {
 
       {isRlsDialogOpen && activeCollection && (
         <div className="rls-dialog-overlay" onClick={() => setIsRlsDialogOpen(false)}>
-          <div className="rls-dialog slide-up" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="rls-dialog slide-up"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rls-dialog-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="rls-dialog-header">
               <div className="rls-dialog-title-wrap">
                 <Shield size={18} />
-                <h3>RLS Settings</h3>
+                <h3 id="rls-dialog-title">RLS Settings</h3>
               </div>
               <button className="btn-icon" onClick={() => setIsRlsDialogOpen(false)} aria-label="Close RLS dialog">
                 <X size={16} />

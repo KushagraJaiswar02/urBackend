@@ -16,8 +16,25 @@ module.exports.insertData = async (req, res) => {
         const { collectionName } = req.params;
         const project = req.project;
 
-        const collectionConfig = project.collections.find(c => c.name === collectionName);
-        if (!collectionConfig) return res.status(404).json({ error: "Collection not found" });
+        let collectionConfig = project.collections.find(c => c.name === collectionName);
+        if (!collectionConfig) {
+            await Project.updateOne(
+                { _id: project._id },
+                {
+                    $push: {
+                        collections: {
+                            name: collectionName,
+                            model: [],
+                            autoCreated: true
+                        }
+                    }
+                }
+            );
+            const updatedProject = await Project.findById(project._id).lean();
+            collectionConfig = updatedProject.collections.find(
+                c => c.name === collectionName
+            );
+        }
 
         const schemaRules = collectionConfig.model;
         const incomingData = req.body;
@@ -64,7 +81,7 @@ module.exports.getAllData = async (req, res) => {
         const project = req.project;
 
         const collectionConfig = project.collections.find(c => c.name === collectionName);
-        if (!collectionConfig) return res.status(404).json({ error: "Collection not found" });
+        if (!collectionConfig) return res.status(200).json([]);
 
         const connection = await getConnection(project._id);
         const Model = getCompiledModel(connection, collectionConfig, project._id, project.resources.db.isExternal);

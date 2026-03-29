@@ -248,6 +248,11 @@ function ProjectDetails() {
                                             <tr key={c._id} className="collection-row" onClick={() => navigate(`/project/${projectId}/database?collection=${c.name}`)}>
                                                 <td style={{ padding: '16px', fontWeight: 500, color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <Database size={16} color="var(--color-text-muted)" className="row-icon" /> {c.name}
+                                                    {c.autoCreated && (
+                                                        <span style={{ fontSize: '0.7rem', background: 'rgba(62, 207, 142, 0.1)', color: '#3ECF8E', padding: '2px 8px', borderRadius: '12px', marginLeft: '6px' }}>
+                                                            Auto
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '16px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
                                                     {c.model.length} fields defined

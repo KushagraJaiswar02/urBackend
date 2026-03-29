@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Project = require("../models/Project");
 const { getConnection } = require("../utils/connection.manager");
 const { getCompiledModel } = require("../utils/injectModel");
+const { deleteProjectByApiKeyCache, deleteProjectById } = require("../services/redisCaching");
 
 // Validate MongoDB ObjectId
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -13,8 +14,28 @@ module.exports.insertData = async (req, res) => {
         const { collectionName } = req.params;
         const project = req.project;
 
-        const collectionConfig = project.collections.find(c => c.name === collectionName);
-        if (!collectionConfig) return res.status(404).json({ error: "Collection not found" });
+        let collectionConfig = project.collections.find(c => c.name === collectionName);
+        if (!collectionConfig) {
+            // Auto-create on first insert
+            collectionConfig = {
+                name: collectionName,
+                model: [],
+                autoCreated: true
+            };
+            project.collections.push(collectionConfig);
+            
+            await Project.updateOne(
+                { _id: project._id },
+                { $push: { collections: collectionConfig } }
+            );
+            
+            if (req.hashedApiKey) {
+                await deleteProjectByApiKeyCache(req.hashedApiKey);
+            }
+            if (project._id) {
+                await deleteProjectById(project._id.toString());
+            }
+        }
 
         const schemaRules = collectionConfig.model;
         const incomingData = req.body;
@@ -77,7 +98,7 @@ module.exports.getAllData = async (req, res) => {
         const project = req.project;
 
         const collectionConfig = project.collections.find(c => c.name === collectionName);
-        if (!collectionConfig) return res.status(404).json({ error: "Collection not found" });
+        if (!collectionConfig) return res.json([]);
 
         const connection = await getConnection(project._id);
         const Model = getCompiledModel(connection, collectionConfig, project._id, project.resources.db.isExternal);

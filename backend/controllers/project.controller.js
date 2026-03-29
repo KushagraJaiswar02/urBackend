@@ -195,6 +195,7 @@ module.exports.createCollection = async (req, res) => {
         await project.save();
 
         await deleteProjectById(projectId);
+        await deleteProjectByApiKeyCache(project.apiKey); // Must clear the apiKey cache too!
         await setProjectById(projectId, project);
         // Safe Response
         const projectObj = project.toObject();
@@ -271,13 +272,15 @@ module.exports.insertData = async (req, res) => {
         const model = getCompiledModel(connection, collectionConfig, projectId, project.resources.db.isExternal);
 
         const result = await model.create(incomingData);
+        // Fetch raw lean document
+        const rawDoc = await model.findById(result._id).lean();
 
         if (!project.resources.db.isExternal) {
             project.databaseUsed = (project.databaseUsed || 0) + docSize;
         }
         await project.save();
 
-        res.json(result);
+        res.json(rawDoc);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

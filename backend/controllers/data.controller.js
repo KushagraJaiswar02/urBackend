@@ -18,7 +18,7 @@ module.exports.insertData = async (req, res) => {
 
         const schemaRules = collectionConfig.model;
         const incomingData = req.body;
-        const cleanData = {};
+        const cleanData = { ...incomingData };
 
         for (const field of schemaRules) {
             const value = incomingData[field.key];
@@ -53,6 +53,8 @@ module.exports.insertData = async (req, res) => {
         const Model = getCompiledModel(connection, collectionConfig, project._id, project.resources.db.isExternal);
 
         const result = await Model.create(safeData);
+        // Fetch raw document to circumvent Mongoose's strict: true stripping in toJSON()/toObject()
+        const rawDoc = await Model.findById(result._id).lean();
 
         if (!project.resources.db.isExternal) {
             await Project.updateOne(
@@ -61,7 +63,7 @@ module.exports.insertData = async (req, res) => {
             );
         }
 
-        res.status(201).json(result);
+        res.status(201).json(rawDoc);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -132,22 +134,23 @@ module.exports.updateSingleData = async (req, res) => {
         const updateData = {};
         for (const key in incomingData) {
             const fieldRule = schemaRules.find(f => f.key === key);
-            if (!fieldRule) continue; // Unknown fields ko ignore karo
-
             const value = incomingData[key];
-            if (fieldRule.type === 'Number' && typeof value !== 'number') return res.status(400).json({ error: `Field '${key}' must be a Number.` });
-            if (fieldRule.type === 'Boolean' && typeof value !== 'boolean') return res.status(400).json({ error: `Field '${key}' must be a Boolean.` });
-            if (fieldRule.type === 'String' && typeof value !== 'string') return res.status(400).json({ error: `Field '${key}' must be a String.` });
-
+            if (fieldRule) {
+                if (fieldRule.type === 'Number' && typeof value !== 'number') return res.status(400).json({ error: `Field '${key}' must be a Number.` });
+                if (fieldRule.type === 'Boolean' && typeof value !== 'boolean') return res.status(400).json({ error: `Field '${key}' must be a Boolean.` });
+                if (fieldRule.type === 'String' && typeof value !== 'string') return res.status(400).json({ error: `Field '${key}' must be a String.` });
+            }
             updateData[key] = value;
         }
 
         const sanitizedData = sanitize(updateData);
 
-        const result = await Model.findByIdAndUpdate(id, { $set: sanitizedData }, { new: true }).lean();
+        const result = await Model.findByIdAndUpdate(id, { $set: sanitizedData }, { new: true });
         if (!result) return res.status(404).json({ error: "Document not found." });
+        
+        const rawDoc = await Model.findById(id).lean();
 
-        res.json({ message: "Updated", data: result });
+        res.json({ message: "Updated", data: rawDoc });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

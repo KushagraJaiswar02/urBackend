@@ -1,14 +1,15 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { loginSchema } = require('../utils/input.validation');
+const z = require('zod');
+const { signupSchema, loginSchema } = require('../utils/input.validation');
 
 module.exports.signup = async (req, res) => {
     try {
         const project = req.project;
 
         // Zod Validation (Prevents NoSQL Injection too)
-        const { email, password, ...otherData } = loginSchema.parse(req.body);
+        const { email, password, ...otherData } = signupSchema.parse(req.body);
 
         const collectionName = `${project._id}_users`;
         const collection = mongoose.connection.db.collection(collectionName);

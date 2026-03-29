@@ -1,5 +1,5 @@
 const dotenv = require('dotenv');
-dotenv.config();
+dotenv.config(); // trigger restart
 
 const express = require('express')
 const mongoose = require('mongoose')

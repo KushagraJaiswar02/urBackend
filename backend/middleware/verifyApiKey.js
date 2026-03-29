@@ -24,6 +24,7 @@ module.exports = async (req, res, next) => {
             project = await Project.findOne({ apiKey: hashedApi })
                 .select(`
                     owner
+                    jwtSecret
                     resources
                     collections
                     databaseLimit

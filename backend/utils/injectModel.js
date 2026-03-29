@@ -18,7 +18,7 @@ function buildMongooseSchema(fieldsArray) {
         };
     });
 
-    return new mongoose.Schema(schemaDef, { timestamps: true });
+    return new mongoose.Schema(schemaDef, { timestamps: true, strict: false, minimize: false });
 }
 
 

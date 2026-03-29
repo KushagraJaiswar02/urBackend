@@ -1,15 +1,25 @@
 const z = require("zod");
 
+module.exports.signupSchema = z.object({
+    email: z.string()
+        .min(1, { message: "Email is required." })
+        .email({ message: "Invalid email format." })
+        .max(100, { message: "Email is too long." }),
+    password: z.string()
+        .min(6, { message: "Password must be at least 6 characters" })
+        .max(100, { message: "Password is too long." }),
+    name: z.string().min(1, "Name is required").optional()
+});
+
 module.exports.loginSchema = z.object({
     email: z.string()
-        .min(1, { message: "Email is required." }) // Ensure the input is not empty
+        .min(1, { message: "Email is required." })
         .email({ message: "Invalid email format." })
         .max(100, { message: "Email is too long." }),
     password: z.string()
         .min(6, { message: "Password must be at least 6 characters" })
         .max(100, { message: "Password is too long." })
 });
-
 module.exports.changePasswordSchema = z.object({
     currentPassword: z.string().min(1, "Current password is required"),
     newPassword: z.string().min(6, "New password must be at least 6 characters")

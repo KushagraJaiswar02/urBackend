@@ -378,8 +378,9 @@ export default function Database() {
                     justify-content: space-between;
                     align-items: center;
                     border-bottom: 1px solid var(--color-border);
-                    z-index: 10;
+                    z-index: 100;
                     flex-shrink: 0; /* Prevent header from collapsing */
+                    background: var(--color-bg-main);
                 }
 
                 .header-left {
@@ -418,95 +419,7 @@ export default function Database() {
                     min-width: 0; /* Critical for flex child scrolling */
                 }
 
-                /* Table Styling */
-                .table-container {
-                    height: 100%;
-                    overflow: auto;
-                    width: 100%;
-                }
-
-                .tanstack-table {
-                    border-collapse: separate;
-                    border-spacing: 0;
-                    table-layout: fixed;
-                    min-width: 100%;
-                }
-
-                .tanstack-table th {
-                    box-sizing: border-box;
-                    background: var(--color-bg-card);
-                    position: sticky;
-                    top: 0;
-                    z-index: 5;
-                    padding: 12px 16px;
-                    font-size: 0.8rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
-                    color: var(--color-text-muted);
-                    border-bottom: 1px solid var(--color-border);
-                    border-right: 1px solid var(--color-border);
-                }
-
-                .tanstack-table td {
-                    box-sizing: border-box;
-                    padding: 0; /* Removing padding from td to let inner div handle it */
-                    background: transparent;
-                    border-bottom: 1px solid rgba(255,255,255,0.05);
-                    border-right: 1px solid rgba(255,255,255,0.05);
-                    font-size: 0.9rem;
-                    transition: background 0.2s;
-                }
-                
-                .cell-content {
-                    padding: 12px 16px;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    width: 100%;
-                    display: block;
-                }
-
-                .resizer {
-                    position: absolute;
-                    right: 0;
-                    top: 0;
-                    height: 100%;
-                    width: 5px;
-                    background: rgba(255, 255, 255, 0.1);
-                    cursor: col-resize;
-                    user-select: none;
-                    touch-action: none;
-                    opacity: 0;
-                    transition: opacity 0.2s;
-                }
-
-                .tanstack-table th:hover .resizer,
-                .resizer.isResizing {
-                    opacity: 1;
-                    background: var(--color-primary);
-                }
-
-                .tanstack-table th:last-child,
-                .tanstack-table td:last-child {
-                    border-right: none;
-                }
-
-                .table-row:hover td {
-                    background: rgba(255,255,255,0.02);
-                }
-
-                
-                .type-badge {
-                    font-size: 0.65rem;
-                    background: rgba(255,255,255,0.08);
-                    padding: 2px 5px;
-                    border-radius: 3px;
-                    margin-left: 8px;
-                    color: #aaa;
-                    text-transform: none;
-                }
-
-                /* View Toggle */
+                /* Component View Toggle styles moved to global for consistency */
                 .view-toggle {
                     background: rgba(255,255,255,0.05);
                     padding: 3px;
@@ -568,7 +481,7 @@ export default function Database() {
                     inset: 0;
                     background: rgba(0,0,0,0.7);
                     backdrop-filter: blur(4px);
-                    z-index: 200;
+                    z-index: 1200;
                     display: flex;
                     align-items: center;
                     justify-content: center;

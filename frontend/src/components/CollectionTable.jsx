@@ -19,7 +19,7 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Trash2, Settings2, Check, GripVertical, Eye } from "lucide-react";
+import { Trash2, Settings2, Check, GripVertical, Eye, Calendar, Type, Hash, ToggleLeft, FileText, Link as LinkIcon, AlertCircle } from "lucide-react";
 
 /* Resizer Component - kept simple */
 const Resizer = ({ header }) => {
@@ -75,22 +75,28 @@ const DraggableColumnHeader = ({ header, children, style: propStyle, className }
 };
 
 export default function CollectionTable({ data, activeCollection, onDelete, onView }) {
-    // 1. Discover all unique keys in data that are NOT in the schema
+    const inferType = (value) => {
+        if (typeof value === 'boolean') return 'Boolean';
+        if (typeof value === 'number') return 'Number';
+        if (Array.isArray(value)) return 'Array';
+        if (value instanceof Date || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value))) return 'Date';
+        if (value && typeof value === 'object') return 'Object';
+        return 'String';
+    };
+
+    // 1. Discover all unique keys in data if schema is empty
     const dataFields = useMemo(() => {
-        const schemaKeys = new Set((activeCollection?.model || []).map(f => f.key));
+        const schemaFields = activeCollection?.model || [];
+        // If schema exists, we only show what's in schema + discover what's NOT in schema
+        // across ALL rows.
+        const schemaKeys = new Set(schemaFields.map(f => f.key));
         const systemFields = new Set(['_id', '__v', 'createdAt', 'updatedAt', 'id']);
         const discovered = new Map();
 
         data.forEach(item => {
             Object.entries(item).forEach(([key, value]) => {
                 if (!schemaKeys.has(key) && !systemFields.has(key)) {
-                    // Basic level of type inference
-                    let type = "String";
-                    if (typeof value === "number") type = "Number";
-                    else if (typeof value === "boolean") type = "Boolean";
-                    else if (Array.isArray(value)) type = "Array";
-                    else if (value && typeof value === "object") type = "Object";
-                    
+                    const type = inferType(value);
                     if (!discovered.has(key)) {
                         discovered.set(key, { key, type, autoCreated: true });
                     }
@@ -100,19 +106,24 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
         return Array.from(discovered.values());
     }, [data, activeCollection]);
 
-    // 2. Combine all fields
+    // 2. Determine final fields to display
+    // If schema exists, use it (zero change for existing collections)
+    // If schema is empty, use derived fields
     const allFields = useMemo(() => {
-        return [...(activeCollection?.model || []), ...dataFields];
+        const schemaFields = activeCollection?.model || [];
+        if (schemaFields.length > 0) return schemaFields;
+        return dataFields;
     }, [activeCollection, dataFields]);
 
     const getIconForType = (type) => {
-        switch (type) {
-            case "String": return <Type size={12} />;
-            case "Number": return <Hash size={12} />;
-            case "Boolean": return <ToggleLeft size={12} />;
-            case "Date": return <Calendar size={12} />;
-            case "Object": return <FileText size={12} />;
-            case "Array": return <LinkIcon size={12} />;
+        const upperType = type.toUpperCase();
+        switch (upperType) {
+            case "STRING": return <Type size={12} />;
+            case "NUMBER": return <Hash size={12} />;
+            case "BOOLEAN": return <ToggleLeft size={12} />;
+            case "DATE": return <Calendar size={12} />;
+            case "OBJECT": return <FileText size={12} />;
+            case "ARRAY": return <LinkIcon size={12} />;
             default: return <AlertCircle size={12} />;
         }
     };
@@ -158,7 +169,7 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                     if (typeof value === "boolean") {
                         return (
                             <span className={`status-badge ${value ? "success" : "danger"}`}>
-                                {String(value)}
+                                {value ? "true" : "false"}
                             </span>
                         );
                     }

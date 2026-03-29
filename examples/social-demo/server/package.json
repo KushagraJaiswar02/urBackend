@@ -1,6 +1,6 @@
 {
   "name": "social-demo-server",
-  "version": "1.0.0",
+  "version": "0.5.0",
   "description": "Proxy Server for Social Demo",
   "main": "index.js",
   "type": "module",

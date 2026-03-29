@@ -17,7 +17,7 @@ export default function RowDetailDrawer({ isOpen, onClose, record, fields }) {
     };
 
     const renderValue = (value) => {
-        if (value === null || value === undefined) return <span className="text-muted italic">Empty</span>;
+        if (value === null || value === undefined) return <span className="text-muted italic">—</span>;
 
         if (typeof value === "boolean") {
             return (
@@ -27,12 +27,26 @@ export default function RowDetailDrawer({ isOpen, onClose, record, fields }) {
             );
         }
 
+        if (Array.isArray(value)) {
+            return value.join(', ');
+        }
+
         if (typeof value === "object") {
             return <pre className="json-preview">{JSON.stringify(value, null, 2)}</pre>;
         }
 
         return String(value);
     };
+
+    const SYSTEM_FIELDS = ['_id', '__v', 'createdAt', 'updatedAt'];
+
+    const customFields = Object.entries(record).filter(
+        ([key]) => !SYSTEM_FIELDS.includes(key)
+    );
+
+    const systemFields = Object.entries(record).filter(
+        ([key]) => SYSTEM_FIELDS.includes(key)
+    );
 
     return (
         <>
@@ -58,40 +72,44 @@ export default function RowDetailDrawer({ isOpen, onClose, record, fields }) {
 
                 <div className="drawer-content custom-scrollbar">
                     <div className="record-grid">
-                        {fields.map((field) => (
-                            <div key={field.key} className="record-field-item">
-                                <div className="field-label">
-                                    <div className="flex items-center gap-2 text-muted">
-                                        {getIconForType(field.type)}
-                                        {field.key}
+                        {customFields.length > 0 && (
+                            <>
+                                <h4 className="section-label">DOCUMENT FIELDS</h4>
+                                {customFields.map(([key, value]) => (
+                                    <div key={key} className="record-field-item">
+                                        <div className="field-label">
+                                            <div className="flex items-center gap-2 text-muted">
+                                                <AlertCircle size={14} />
+                                                {key.toUpperCase()}
+                                            </div>
+                                        </div>
+                                        <div className="field-value">
+                                            {renderValue(value)}
+                                        </div>
                                     </div>
-                                    <span className="type-badge">{field.type}</span>
-                                </div>
-                                <div className="field-value">
-                                    {renderValue(record[field.key])}
-                                </div>
-                            </div>
-                        ))}
+                                ))}
+                                <div style={{ height: '1.5rem' }}></div>
+                            </>
+                        )}
                     </div>
 
                     <div className="system-fields-section">
                         <h4 className="section-label">SYSTEM METADATA</h4>
-                        <div className="record-field-item">
-                            <div className="field-label">_id</div>
-                            <div className="field-value font-mono">{record._id}</div>
-                        </div>
-                        {record.createdAt && (
-                            <div className="record-field-item">
-                                <div className="field-label">createdAt</div>
-                                <div className="field-value">{new Date(record.createdAt).toLocaleString()}</div>
+                        {systemFields.map(([key, value]) => (
+                            <div key={key} className="record-field-item" style={{ marginBottom: '1rem' }}>
+                                <div className="field-label">
+                                    <div className="flex items-center gap-2 text-muted">
+                                        <AlertCircle size={14} />
+                                        {key.toUpperCase()}
+                                    </div>
+                                </div>
+                                <div className="field-value font-mono">
+                                    {key.toLowerCase().includes('date') || key.toLowerCase().includes('at') 
+                                      ? (value ? new Date(value).toLocaleString() : '—') 
+                                      : renderValue(value)}
+                                </div>
                             </div>
-                        )}
-                        {record.updatedAt && (
-                            <div className="record-field-item">
-                                <div className="field-label">updatedAt</div>
-                                <div className="field-value">{new Date(record.updatedAt).toLocaleString()}</div>
-                            </div>
-                        )}
+                        ))}
                     </div>
                 </div>
             </div>

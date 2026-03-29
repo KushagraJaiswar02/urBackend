@@ -9,8 +9,8 @@ const limiter = rateLimit({
     message: { error: "Too many requests, please try again later." },
     standardHeaders: true,
     legacyHeaders: false,
-    validate: { xForwardedForHeader: false },
-    validate: { trustProxy: false }
+    skip: (req) => process.env.NODE_ENV === 'development',
+    validate: { xForwardedForHeader: false, trustProxy: false }
 });
 
 // Logger 

@@ -58,10 +58,10 @@ module.exports.login = async (req, res) => {
         const collection = mongoose.connection.db.collection(collectionName);
 
         const user = await collection.findOne({ email });
-        if (!user) return res.status(400).json({ error: "Invalid email or password" });
+        if (!user) return res.status(401).json({ error: "Invalid email or password" });
 
         const validPass = await bcrypt.compare(password, user.password);
-        if (!validPass) return res.status(400).json({ error: "Invalid email or password" });
+        if (!validPass) return res.status(401).json({ error: "Invalid email or password" });
 
         const token = jwt.sign(
             { userId: user._id, projectId: project._id },
@@ -100,7 +100,7 @@ module.exports.me = async (req, res) => {
             res.json(userData);
 
         } catch (err) {
-            return res.status(400).json({ error: "Invalid or Expired Token" });
+            return res.status(401).json({ error: "Invalid or Expired Token" });
         }
 
     } catch (err) {

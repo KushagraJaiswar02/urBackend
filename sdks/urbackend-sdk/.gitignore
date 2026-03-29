@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.env
+lint_results.txt
+lint.json
+lint_final.json
+lint_clean.txt
+lint_output.txt

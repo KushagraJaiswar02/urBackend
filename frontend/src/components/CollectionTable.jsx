@@ -75,9 +75,50 @@ const DraggableColumnHeader = ({ header, children, style: propStyle, className }
 };
 
 export default function CollectionTable({ data, activeCollection, onDelete, onView }) {
-    // 1. Column Definitions
+    // 1. Discover all unique keys in data that are NOT in the schema
+    const dataFields = useMemo(() => {
+        const schemaKeys = new Set((activeCollection?.model || []).map(f => f.key));
+        const systemFields = new Set(['_id', '__v', 'createdAt', 'updatedAt', 'id']);
+        const discovered = new Map();
+
+        data.forEach(item => {
+            Object.entries(item).forEach(([key, value]) => {
+                if (!schemaKeys.has(key) && !systemFields.has(key)) {
+                    // Basic level of type inference
+                    let type = "String";
+                    if (typeof value === "number") type = "Number";
+                    else if (typeof value === "boolean") type = "Boolean";
+                    else if (Array.isArray(value)) type = "Array";
+                    else if (value && typeof value === "object") type = "Object";
+                    
+                    if (!discovered.has(key)) {
+                        discovered.set(key, { key, type, autoCreated: true });
+                    }
+                }
+            });
+        });
+        return Array.from(discovered.values());
+    }, [data, activeCollection]);
+
+    // 2. Combine all fields
+    const allFields = useMemo(() => {
+        return [...(activeCollection?.model || []), ...dataFields];
+    }, [activeCollection, dataFields]);
+
+    const getIconForType = (type) => {
+        switch (type) {
+            case "String": return <Type size={12} />;
+            case "Number": return <Hash size={12} />;
+            case "Boolean": return <ToggleLeft size={12} />;
+            case "Date": return <Calendar size={12} />;
+            case "Object": return <FileText size={12} />;
+            case "Array": return <LinkIcon size={12} />;
+            default: return <AlertCircle size={12} />;
+        }
+    };
+
+    // 3. Column Definitions
     const columns = useMemo(() => {
-        if (!activeCollection?.model) return [];
         return [
             {
                 id: "rowNumber",
@@ -87,14 +128,23 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                 enableResizing: false,
                 enableHiding: false,
             },
-            ...activeCollection.model.map((field) => ({
-                id: field.key, // Explicit ID matches accessorKey usually
+            ...allFields.map((field) => ({
+                id: field.key,
                 header: () => (
                     <div className="th-content">
-                        {/* Drag Handle Indicator (Visual only, whole header is draggable) */}
                         <GripVertical size={12} className="drag-handle" style={{ marginRight: 6, opacity: 0.5 }} />
-                        {field.key}
-                        <span className="type-badge">{field.type}</span>
+                        <div className="flex items-center gap-1">
+                            {field.autoCreated && (
+                                <span className="text-[10px] bg-primary/10 text-primary px-1 rounded border border-primary/20 mr-1">
+                                    DYN
+                                </span>
+                            )}
+                            {field.key}
+                        </div>
+                        <span className="type-badge">
+                            {getIconForType(field.type)}
+                            {field.type}
+                        </span>
                     </div>
                 ),
                 accessorKey: field.key,
@@ -103,6 +153,8 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                 maxSize: 500,
                 cell: (info) => {
                     const value = info.getValue();
+                    if (value === null || value === undefined) return <span className="text-muted italic">—</span>;
+                    
                     if (typeof value === "boolean") {
                         return (
                             <span className={`status-badge ${value ? "success" : "danger"}`}>
@@ -110,6 +162,15 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                             </span>
                         );
                     }
+                    
+                    if (typeof value === "object") {
+                        return (
+                            <div className="cell-content text-muted italic" style={{ fontSize: '0.8rem' }}>
+                                {Array.isArray(value) ? `[Array(${value.length})]` : '{Object}'}
+                            </div>
+                        );
+                    }
+                    
                     return (
                         <div className="cell-content" title={String(value)}>
                             {String(value)}
@@ -156,7 +217,7 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                 ),
             },
         ];
-    }, [activeCollection, onDelete, onView]);
+    }, [allFields, onDelete, onView]);
 
     // 2. Load Persisted State
     const storageKey = `table-settings-${activeCollection?._id}`;

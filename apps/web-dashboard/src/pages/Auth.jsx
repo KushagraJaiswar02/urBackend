@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { Shield, Trash2, User, Search, Mail, UserPlus, Key, X, AlertCircle, Edit2, Save, Settings } from 'lucide-react';
+import { Shield, Trash2, User, Search, Mail, UserPlus, Key, X, AlertCircle, Edit2, Save, Settings, Monitor, LogOut } from 'lucide-react';
 
 // FUNCTION - DYNAMIC USER FORM
 const DynamicUserForm = ({ schema, formData, onChange, isEdit = false }) => {
@@ -139,6 +139,11 @@ export default function Auth() {
     const [resetTargetUser, setResetTargetUser] = useState(null);
     const [newPassVal, setNewPassVal] = useState('');
     const [isResetting, setIsResetting] = useState(false);
+    const [isSessionsModalOpen, setIsSessionsModalOpen] = useState(false);
+    const [sessionsTargetUser, setSessionsTargetUser] = useState(null);
+    const [userSessions, setUserSessions] = useState([]);
+    const [loadingSessions, setLoadingSessions] = useState(false);
+    const [revokingSessionId, setRevokingSessionId] = useState(null);
 
     const usersCollection = project?.collections?.find(c => c.name === 'users');
     const hasUserCollection = !!usersCollection;
@@ -326,6 +331,43 @@ export default function Auth() {
         }
     };
 
+// GET REQ FOR LIST USER SESSIONS
+    const handleOpenSessions = async (user) => {
+        setSessionsTargetUser(user);
+        setIsSessionsModalOpen(true);
+        setLoadingSessions(true);
+        try {
+            const res = await api.get(
+                `/api/projects/${projectId}/admin/users/${user._id}/sessions`
+            );
+            setUserSessions(res.data?.sessions || []);
+        } catch (err) {
+            console.error(err);
+            toast.error(getApiErrorMessage(err, "Failed to load user sessions"));
+            setUserSessions([]);
+        } finally {
+            setLoadingSessions(false);
+        }
+    };
+
+// DELETE REQ FOR REVOKE USER SESSION
+    const handleRevokeSession = async (tokenId) => {
+        if (!sessionsTargetUser?._id) return;
+        setRevokingSessionId(tokenId);
+        try {
+            await api.delete(
+                `/api/projects/${projectId}/admin/users/${sessionsTargetUser._id}/sessions/${tokenId}`
+            );
+            setUserSessions((prev) => prev.filter((session) => session.tokenId !== tokenId));
+            toast.success("Session revoked");
+        } catch (err) {
+            console.error(err);
+            toast.error(getApiErrorMessage(err, "Failed to revoke session"));
+        } finally {
+            setRevokingSessionId(null);
+        }
+    };
+
     // FUNCTION - FILTER USERS
     const filteredUsers = users.filter(user =>
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -509,6 +551,14 @@ export default function Auth() {
                                             </td>
                                             <td style={{ padding: '16px', textAlign: 'right' }}>
                                                 <button
+                                                    onClick={() => handleOpenSessions(user)}
+                                                    className="btn btn-ghost"
+                                                    style={{ color: 'var(--color-text-muted)', padding: '8px', borderRadius: '6px', marginRight: '4px' }}
+                                                    title="Manage Sessions"
+                                                >
+                                                    <Monitor size={18} />
+                                                </button>
+                                                <button
                                                     onClick={() => handleEditClick(user._id)}
                                                     className="btn btn-ghost"
                                                     style={{ color: 'var(--color-text-muted)', padding: '8px', borderRadius: '6px', marginRight: '4px' }}
@@ -647,6 +697,52 @@ export default function Auth() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {isSessionsModalOpen && (
+                <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setIsSessionsModalOpen(false)}>
+                    <div className="card modal-content" style={{ width: '100%', maxWidth: '760px', position: 'relative', maxHeight: '75vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <button className="btn-icon" style={{ position: 'absolute', top: '16px', right: '16px' }} onClick={() => setIsSessionsModalOpen(false)}>
+                            <X size={20} />
+                        </button>
+                        <h2 style={{ fontSize: '1.4rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Monitor size={22} color="var(--color-primary)" /> User Sessions
+                        </h2>
+                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.2rem' }}>
+                            Active sessions for <strong>{sessionsTargetUser?.email}</strong>
+                        </p>
+
+                        {loadingSessions ? (
+                            <p style={{ color: 'var(--color-text-muted)' }}>Loading sessions...</p>
+                        ) : userSessions.length === 0 ? (
+                            <p style={{ color: 'var(--color-text-muted)' }}>No active sessions found.</p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {userSessions.map((session) => (
+                                    <div key={session.tokenId} style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                                        <div style={{ minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-main)', marginBottom: '4px' }}>
+                                                {session.userAgent || 'unknown'}
+                                                {session.isCurrent ? <span style={{ marginLeft: '8px', fontSize: '0.75rem', color: 'var(--color-primary)' }}>(Current)</span> : null}
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                                IP: {session.ip || 'unknown'} • Last used: {session.lastUsedAt ? new Date(session.lastUsedAt).toLocaleString() : 'N/A'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="btn btn-ghost"
+                                            style={{ color: '#ef4444', padding: '8px', borderRadius: '6px', flexShrink: 0 }}
+                                            onClick={() => handleRevokeSession(session.tokenId)}
+                                            disabled={revokingSessionId === session.tokenId}
+                                            title="Revoke session"
+                                        >
+                                            <LogOut size={18} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

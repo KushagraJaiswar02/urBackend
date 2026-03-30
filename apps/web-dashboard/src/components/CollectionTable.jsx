@@ -77,7 +77,31 @@ const DraggableColumnHeader = ({ header, children, style: propStyle, className }
 export default function CollectionTable({ data, activeCollection, onDelete, onView, onEdit }) {
     // 1. Column Definitions
     const columns = useMemo(() => {
-        if (!activeCollection?.model) return [];
+        if (!activeCollection) return [];
+
+        const SYSTEM_FIELDS = ['_id', '__v', 'createdAt', 'updatedAt'];
+
+        const inferType = (value) => {
+            if (typeof value === 'boolean') return 'BOOLEAN';
+            if (typeof value === 'number') return 'NUMBER';
+            if (Array.isArray(value)) return 'ARRAY';
+            return 'STRING';
+        };
+
+        const baseColumns = activeCollection.model?.length > 0
+            ? activeCollection.model.map(field => ({
+                key: field.key,
+                type: field.type
+            }))
+            : data?.length > 0
+                ? Object.entries(data[0])
+                    .filter(([key]) => !SYSTEM_FIELDS.includes(key))
+                    .map(([key, value]) => ({
+                        key,
+                        type: inferType(value)
+                    }))
+                : [];
+
         return [
             {
                 id: "rowNumber",
@@ -87,11 +111,10 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                 enableResizing: false,
                 enableHiding: false,
             },
-            ...activeCollection.model.map((field) => ({
-                id: field.key, // Explicit ID matches accessorKey usually
+            ...baseColumns.map((field) => ({
+                id: field.key,
                 header: () => (
                     <div className="th-content">
-                        {/* Drag Handle Indicator (Visual only, whole header is draggable) */}
                         <GripVertical size={12} className="drag-handle" style={{ marginRight: 6, opacity: 0.5 }} />
                         {field.key}
                         <span className="type-badge">{field.type}</span>
@@ -103,6 +126,7 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                 maxSize: 500,
                 cell: (info) => {
                     const value = info.getValue();
+                    if (value === null || value === undefined) return <span className="text-muted">—</span>;
                     if (typeof value === "boolean") {
                         return (
                             <span className={`status-badge ${value ? "success" : "danger"}`}>
@@ -110,8 +134,7 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                             </span>
                         );
                     }
-                    // Object type — show preview
-                    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+                    if (typeof value === "object" && !Array.isArray(value)) {
                         const keys = Object.keys(value).filter(k => !k.startsWith('_'));
                         return (
                             <div className="cell-content" title={JSON.stringify(value, null, 2)}
@@ -120,7 +143,6 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                             </div>
                         );
                     }
-                    // Array type — show count
                     if (Array.isArray(value)) {
                         return (
                             <div className="cell-content" title={JSON.stringify(value, null, 2)}
@@ -130,8 +152,8 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                         );
                     }
                     return (
-                        <div className="cell-content" title={String(value ?? '')}>
-                            {String(value ?? '')}
+                        <div className="cell-content" title={String(value)}>
+                            {String(value)}
                         </div>
                     );
                 },
@@ -183,7 +205,7 @@ export default function CollectionTable({ data, activeCollection, onDelete, onVi
                 ),
             },
         ];
-    }, [activeCollection, onDelete, onView, onEdit]);
+    }, [activeCollection, data, onDelete, onView, onEdit]);
 
     // 2. Load Persisted State
     const storageKey = `table-settings-${activeCollection?._id}`;

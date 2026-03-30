@@ -413,32 +413,34 @@ export default function Database() {
               <div className="header-actions">
                 <span className="record-count">{data.length} Records</span>
 
-                <div className="view-toggle">
-                  <button
-                    className={`toggle-btn ${viewMode === "list" ? "active" : ""
-                      }`}
-                    onClick={() => setViewMode("list")}
-                    title="List View"
-                  >
-                    <ListIcon size={16} />
-                  </button>
-                  <button
-                    className={`toggle-btn ${viewMode === "table" ? "active" : ""
-                      }`}
-                    onClick={() => setViewMode("table")}
-                    title="Table View (Advanced)"
-                  >
-                    <TableIcon size={16} />
-                  </button>
-                  <button
-                    className={`toggle-btn ${viewMode === "json" ? "active" : ""
-                      }`}
-                    onClick={() => setViewMode("json")}
-                    title="JSON View"
-                  >
-                    <Code size={16} />
-                  </button>
-                </div>
+                {(activeCollection?.model?.length > 0 || data?.length > 0) && (
+                  <div className="view-toggle">
+                    <button
+                      className={`toggle-btn ${viewMode === "list" ? "active" : ""
+                        }`}
+                      onClick={() => setViewMode("list")}
+                      title="List View"
+                    >
+                      <ListIcon size={16} />
+                    </button>
+                    <button
+                      className={`toggle-btn ${viewMode === "table" ? "active" : ""
+                        }`}
+                      onClick={() => setViewMode("table")}
+                      title="Table View (Advanced)"
+                    >
+                      <TableIcon size={16} />
+                    </button>
+                    <button
+                      className={`toggle-btn ${viewMode === "json" ? "active" : ""
+                        }`}
+                      onClick={() => setViewMode("json")}
+                      title="JSON View"
+                    >
+                      <Code size={16} />
+                    </button>
+                  </div>
+                )}
 
                 <div style={{ position: 'relative' }}>
                   <button

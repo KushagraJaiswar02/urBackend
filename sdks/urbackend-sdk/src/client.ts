@@ -13,7 +13,7 @@ export class UrBackendClient {
 
   constructor(config: UrBackendConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'https://api.urbackend.bitbros.in';
+    this.baseUrl = config.baseUrl || 'https://api.ub.bitbros.in';
 
     if (typeof window !== 'undefined') {
       console.warn(

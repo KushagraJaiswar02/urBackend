@@ -171,6 +171,15 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.btn-icon:focus-visible,
+.btn-icon-only:focus-visible,
+.toggle-btn:focus-visible,
+.nav-link:focus-visible,
+.nav-back-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 /* Form Elements */
 .input-field {
   width: 100%;

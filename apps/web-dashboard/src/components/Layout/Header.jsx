@@ -47,6 +47,8 @@ function Header({ onToggleSidebar, showToggle = true }) { // Default showToggle 
                     onClick={onToggleSidebar}
                     className="btn btn-ghost mobile-toggle"
                     style={{ padding: '8px', color: 'var(--color-text-main)' }}
+                    title="Open navigation menu"
+                    aria-label="Open navigation menu"
                 >
                     <Menu size={24} />
                 </button>

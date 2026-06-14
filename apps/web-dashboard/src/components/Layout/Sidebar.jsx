@@ -36,6 +36,8 @@ function Sidebar({ logo, isOpen, onClose }) { // Props received
                     onClick={onClose}
                     className="btn btn-ghost"
                     style={{ padding: '4px', display: 'none' }} // Hidden on desktop
+                    title="Close navigation menu"
+                    aria-label="Close navigation menu"
                 >
                     <X size={20} />
                 </button>

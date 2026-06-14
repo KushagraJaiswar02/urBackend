@@ -397,6 +397,8 @@ export default function Database() {
                 <button
                   className="btn-icon hide-desktop menu-trigger"
                   onClick={() => setIsSidebarOpen(true)}
+                  title="Open collections sidebar"
+                  aria-label="Open collections sidebar"
                 >
                   <Menu size={20} />
                 </button>
@@ -417,25 +419,28 @@ export default function Database() {
                   <div className="view-toggle">
                     <button
                       className={`toggle-btn ${viewMode === "list" ? "active" : ""
-                        }`}
+                      }`}
                       onClick={() => setViewMode("list")}
                       title="List View"
+                      aria-label="List View"
                     >
                       <ListIcon size={16} />
                     </button>
                     <button
                       className={`toggle-btn ${viewMode === "table" ? "active" : ""
-                        }`}
+                      }`}
                       onClick={() => setViewMode("table")}
                       title="Table View (Advanced)"
+                      aria-label="Table View (Advanced)"
                     >
                       <TableIcon size={16} />
                     </button>
                     <button
                       className={`toggle-btn ${viewMode === "json" ? "active" : ""
-                        }`}
+                      }`}
                       onClick={() => setViewMode("json")}
                       title="JSON View"
+                      aria-label="JSON View"
                     >
                       <Code size={16} />
                     </button>
@@ -447,6 +452,7 @@ export default function Database() {
                     className={`btn ${showFilterMenu ? 'btn-primary' : 'btn-secondary'} btn-icon-only filter-trigger`}
                     onClick={() => setShowFilterMenu(!showFilterMenu)}
                     title="Filter & Sort"
+                    aria-label="Filter & Sort"
                   >
                     <Filter size={18} />
                     {queryParams.filters.length > 0 && (
@@ -490,6 +496,7 @@ export default function Database() {
                                 setQueryParams(p => ({ ...p, sort: isDesc ? field : `-${field}` }));
                               }}
                               title="Toggle direction"
+                              aria-label="Toggle sort direction"
                             >
                               {queryParams.sort.startsWith('-') ? '↓' : '↑'}
                             </button>
@@ -593,6 +600,8 @@ export default function Database() {
                 <button
                   onClick={fetchData}
                   className="btn btn-secondary btn-icon-only"
+                  title="Refresh records"
+                  aria-label="Refresh records"
                 >
                   <RefreshCw
                     size={18}
@@ -605,6 +614,7 @@ export default function Database() {
                     onClick={() => setIsRlsDialogOpen(true)}
                     className="btn btn-secondary"
                     title="Configure Row Level Security"
+                    aria-label="Configure Row Level Security"
                   >
                     <Shield size={16} />
                     <span className="hide-mobile">RLS</span>
@@ -696,6 +706,8 @@ export default function Database() {
                       onClick={() => setQueryParams(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
                       disabled={queryParams.page === 1}
                       style={{ opacity: queryParams.page === 1 ? 0.5 : 1, cursor: queryParams.page === 1 ? 'not-allowed' : 'pointer' }}
+                      title="Previous page"
+                      aria-label="Previous page"
                     >
                       <ChevronLeft size={16} />
                     </button>
@@ -704,6 +716,8 @@ export default function Database() {
                       onClick={() => setQueryParams(p => ({ ...p, page: p.page + 1 }))}
                       disabled={data.length < queryParams.limit}
                       style={{ opacity: data.length < queryParams.limit ? 0.5 : 1, cursor: data.length < queryParams.limit ? 'not-allowed' : 'pointer' }}
+                      title="Next page"
+                      aria-label="Next page"
                     >
                       <ChevronRight size={16} />
                     </button>
@@ -717,6 +731,8 @@ export default function Database() {
             <button
               className="btn-icon hide-desktop menu-trigger absolute-trigger"
               onClick={() => setIsSidebarOpen(true)}
+              title="Open collections sidebar"
+              aria-label="Open collections sidebar"
             >
               <Menu size={20} />
             </button>

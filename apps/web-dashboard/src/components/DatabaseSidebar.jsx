@@ -19,6 +19,13 @@ export default function DatabaseSidebar({
     onRequestDelete
 }) {
     const visibleCollections = collections.filter(c => c.name !== 'users' || showUsers);
+    const selectCollection = (collection) => setActiveCollection(collection);
+    const handleCollectionKeyDown = (event, collection) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectCollection(collection);
+        }
+    };
 
     return (
         <aside className={`db-sidebar ${isSidebarOpen ? "open" : ""}`}>
@@ -31,6 +38,8 @@ export default function DatabaseSidebar({
                     <button
                         className="btn-icon hide-desktop"
                         onClick={() => setIsSidebarOpen(false)}
+                        title="Close collections sidebar"
+                        aria-label="Close collections sidebar"
                     >
                         <X size={18} />
                     </button>
@@ -38,6 +47,7 @@ export default function DatabaseSidebar({
                         className="btn-icon add-col-btn"
                         onClick={() => navigate(`/project/${projectId}/create-collection`)}
                         title="New Collection"
+                        aria-label="New Collection"
                     >
                         <Plus size={18} />
                     </button>
@@ -61,12 +71,18 @@ export default function DatabaseSidebar({
                     visibleCollections.map((c) => (
                         <div
                             key={c._id}
-                            onClick={() => setActiveCollection(c)}
+                            onClick={() => selectCollection(c)}
+                            onKeyDown={(event) => handleCollectionKeyDown(event, c)}
                             className={`collection-item ${activeCollection?._id === c._id ? "active" : ""
                                 }`}
+                            role="button"
+                            tabIndex={0}
+                            title={`Open ${c.name} collection`}
+                            aria-label={`Open ${c.name} collection`}
+                            aria-current={activeCollection?._id === c._id ? "page" : undefined}
                         >
                             <div className="flex items-center gap-3 overflow-hidden" style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                                <DbIcon size={16} className="col-icon shrink-0" />
+                                <DbIcon size={16} className="col-icon shrink-0" aria-hidden="true" />
                                 <span className="col-name truncate" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
                             </div>
                             <div className="flex items-center gap-2 ml-auto" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
@@ -77,11 +93,12 @@ export default function DatabaseSidebar({
                                         if (onRequestDelete) onRequestDelete(c);
                                     }}
                                     title="Delete Collection"
+                                    aria-label={`Delete ${c.name} collection`}
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={14} aria-hidden="true" />
                                 </button>
                                 {activeCollection?._id === c._id && (
-                                    <ChevronRight size={14} className="active-indicator shrink-0" />
+                                    <ChevronRight size={14} className="active-indicator shrink-0" aria-hidden="true" />
                                 )}
                             </div>
                         </div>
@@ -158,6 +175,15 @@ export default function DatabaseSidebar({
                 }
 
                 .collection-item:hover .delete-btn {
+                    opacity: 1;
+                }
+
+                .collection-item:focus-visible {
+                    outline: 2px solid var(--color-primary);
+                    outline-offset: 2px;
+                }
+
+                .collection-item:focus-within .delete-btn {
                     opacity: 1;
                 }
 

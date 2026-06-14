@@ -69,6 +69,20 @@ export default function Analytics() {
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     };
 
+    const getUsagePercent = (used = 0, limit = 0) => {
+        if (limit === 0) return null;
+        return Math.min(((used || 0) / limit) * 100, 100);
+    };
+
+    const getUsageBarWidth = (used = 0, limit = 0) => {
+        return `${getUsagePercent(used, limit) || 0}%`;
+    };
+
+    const getUsageRatio = (used = 0, limit = 0) => {
+        if (limit === 0) return 0;
+        return (used || 0) / limit;
+    };
+
     // Helper for Status Color
     const getStatusColor = (status) => {
         if (status >= 500) return '#ef4444'; // Red
@@ -134,7 +148,7 @@ export default function Analytics() {
                     {/* Progress Bar */}
                     <div style={{ width: '100%', height: '6px', background: 'var(--color-bg-input)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{
-                            width: `${Math.min((data.storage.used / data.storage.limit) * 100, 100)}%`,
+                            width: getUsageBarWidth(data.storage.used, data.storage.limit),
                             height: '100%',
                             background: 'linear-gradient(90deg, var(--color-primary), #34d399)',
                             borderRadius: '3px',
@@ -157,9 +171,9 @@ export default function Analytics() {
                     {/* Progress Bar */}
                     <div style={{ width: '100%', height: '6px', background: 'var(--color-bg-input)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{
-                            width: `${Math.min(((data.database?.used || 0) / (data.database?.limit || 1)) * 100, 100)}%`,
+                            width: getUsageBarWidth(data.database?.used || 0, data.database?.limit || 0),
                             height: '100%',
-                            background: ((data.database?.used || 0) / (data.database?.limit || 1)) > 0.8 ? '#ef4444' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                            background: getUsageRatio(data.database?.used || 0, data.database?.limit || 0) > 0.8 ? '#ef4444' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
                             borderRadius: '3px',
                             transition: 'width 0.5s ease'
                         }}></div>
